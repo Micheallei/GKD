@@ -11,6 +11,8 @@ pub struct ServerConnecter{
     control_port:u16,
     client_id:i32,
     connecting:bool,
+    selfIp:String,
+    selfDataPort:i32,
     //private client.SynItem syn;
     to_server:Option<TcpStream>,
 }
@@ -20,7 +22,7 @@ static mut sta_server_ip:String = String::new();
 static mut sta_control_port:u16 = 0;
 impl ServerConnecter{
 
-    pub fn new(c_id:i32)->ServerConnecter{//client.SynItem s
+    pub fn new(c_id:i32,selfIp:String,selfDataPort:i32)->ServerConnecter{//client.SynItem s
         ServerConnecter{
             /*server_ip: String::new(),
             control_port: 0,*/ //note:by lyf
@@ -30,6 +32,8 @@ impl ServerConnecter{
             
             client_id: c_id,
             connecting: true,
+            selfIp:selfIp,
+            selfDataPort:selfDataPort,
             to_server:None,
         }
     }
@@ -67,6 +71,14 @@ impl ServerConnecter{
                 Some (socket) => {
                     let socket_read = socket.try_clone().expect("clone failed...");
                     let mut in_from_server = BufReader::new(socket_read);
+                    //dontpanic新加
+                    socket.write_fmt(format_args!("3 {} {} {}\n", self.client_id.to_string(),self.selfIp,self.selfDataPort);//TODO:err handle
+                    socket.flush();//TODO:err
+                    input_buf.clear();
+                    in_from_server.read_line(&mut input_buf).unwrap();
+                    //debug
+                    println!("input_buf:{}",input_buf);
+
                     while self.connecting{
                         //我不知道原文件的client.Client.getRS()是什么东西所以没有写
                         socket.write_fmt(format_args!("1 {} {}\n", self.client_id.to_string(),crate::client::client::client::getRs()));//TODO:err handle
@@ -79,7 +91,7 @@ impl ServerConnecter{
 
                         //debug
                         //println!("input is: {}\n", input_buf);
-
+                        /* dontpanic删除
                         let mut unread_request:i32 = input_vec[2].trim().parse().unwrap();
                         
                         //println!("after input_vec[2]\n");//note:by lyf
@@ -102,6 +114,7 @@ impl ServerConnecter{
                             f_manager.submit();
                             unread_request = unread_request - 1;
                         }
+                        */
                         //sleep
                         let five_seconds = time::Duration::new(5, 0);
                         thread::sleep(five_seconds);
