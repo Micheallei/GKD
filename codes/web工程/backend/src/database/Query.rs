@@ -1,24 +1,32 @@
 use std::*;
 use std::convert::TryInto;
-
-
-//include!("FileItem.rs");
-//include!("RequestItem.rs");
-//include!("DeviceItem.rs");
-use super::FileItem::FileItem;
-use super::DeviceItem::DeviceItem;
-use super::RequestItem::RequestItem;
+include!("FileItem.rs");
+include!("RequestItem.rs");
+include!("DeviceItem.rs");
 use mysql as my;
 
 struct UserItem {
     id: i32,
     name: Option<String>,
     passwd: Option<String>,
+    uris: Option<String>,
+    time: Option<String>,
 }
 
 struct FragmentItem {
     id: i32,
     path: Option<String>,
+}
+
+struct GroupRole {
+    id: i32,
+    name: Option<String>,
+    uris: Option<String>,
+}
+
+struct UserGroup {
+    id: i32,
+    gid: i32,
 }
 
 pub struct Query{
@@ -36,28 +44,32 @@ impl Query {
 
     pub fn queryFile_Bypathname(&self, path: Option<String>, name: Option<String>) -> FileItem{
         let selected: Result<Vec<FileItem>, mysql::Error> =
-        self.pool.prep_exec("SELECT * FROM DFS.file WHERE NAME = :name AND PATH = :path", 
-                params!{"name" => name, "path" => path})
-        .map(|result| { 
-            result.map(|x| x.unwrap()).map(|row| {
-                let (id, name, path, attribute, time, noa, is_folder) = my::from_row(row);
-                FileItem {
-                    id: id,
-                    name: name,
-                    path: path,
-                    attribute: attribute,
-                    time: time,
-                    noa: noa,
-                    is_folder: is_folder,
-                }
-            }).collect()
-        });
+            self.pool.prep_exec("SELECT * FROM DFS.file WHERE NAME = :name AND PATH = :path",
+                                params!{"name" => name, "path" => path})
+                .map(|result| {
+                    result.map(|x| x.unwrap()).map(|row| {
+                        let (id, name, path, attribute, time, nod, noa, is_folder, file_type, file_size, whose) = my::from_row(row);
+                        FileItem {
+                            id: id,
+                            name: name,
+                            path: path,
+                            attribute: attribute,
+                            time: time,
+                            nod: nod,
+                            noa: noa,
+                            is_folder: is_folder,
+                            file_type: file_type,
+                            file_size: file_size,
+                            whose: whose,
+                        }
+                    }).collect()
+                });
         match &selected {
             Err(e) => {
                 return FileItem {
-                    id: -1, 
-                    name: "".to_string(), 
-                    path: "".to_string(), 
+                    id: -1,
+                    name: "".to_string(),
+                    path: "".to_string(),
                     attribute: "".to_string(),
                     time: "".to_string(),
                     noa: 0,
@@ -67,9 +79,9 @@ impl Query {
             Ok(selected_files) => {
                 if selected_files.len() == 0 {
                     return FileItem {
-                        id: 0, 
-                        name: "".to_string(), 
-                        path: "".to_string(), 
+                        id: 0,
+                        name: "".to_string(),
+                        path: "".to_string(),
                         attribute: "".to_string(),
                         time: "".to_string(),
                         noa: 0,
@@ -89,84 +101,197 @@ impl Query {
         }
     }
 
-    pub fn queryFile_Byid(&self, id: i32) -> FileItem {
-        let selected: Result<Vec<FileItem>, mysql::Error> =
-        self.pool.prep_exec("SELECT * FROM DFS.file WHERE ID = :id", 
-                params!{"id" => id})
-        .map(|result| { 
-            result.map(|x| x.unwrap()).map(|row| {
-                let (id, name, path, attribute, time, noa, is_folder) = my::from_row(row);
-                FileItem {
-                    id: id,
-                    name: name,
-                    path: path,
-                    attribute: attribute,
-                    time: time,
-                    noa: noa,
-                    is_folder: is_folder,
-                }
-            }).collect()
-        });
-        match &selected {
+    pub fn query_user_time(&self, whose: String) -> i32{
+        let selected_users: Result<Vec<UserItem>, mysql::Error> =
+            self.pool.prep_exec("SELECT * FROM DFS.user WHERE NAME = :name",
+                                params!{"name" => whose})
+                .map(|result| {
+                    result.map(|x| x.unwrap()).map(|row| {
+                        let (id, name, passwd, uris, time) = my::from_row(row);
+                        UserItem {
+                            id: id,
+                            name: name,
+                            passwd: passwd,
+                            uris: uris,
+                            time: time,
+                        }
+                    }).collect()
+                });
+        match &selected_users {
             Err(e) => {
-                return FileItem {
-                    id: -1, 
-                    name: "".to_string(), 
-                    path: "".to_string(), 
-                    attribute: "".to_string(),
-                    time: "".to_string(),
-                    noa: 0,
-                    is_folder: false,
-                }
+                return -1;
             }
             Ok(selected_files) => {
                 if selected_files.len() == 0 {
-                    return FileItem {
-                        id: 0, 
-                        name: "".to_string(), 
-                        path: "".to_string(), 
-                        attribute: "".to_string(),
-                        time: "".to_string(),
-                        noa: 0,
-                        is_folder: false,
-                    }
+                    return 0;
                 }
-                return FileItem {
-                    id: selected_files[0].id,
-                    name: selected_files[0].name.clone(),
-                    path: selected_files[0].path.clone(),
-                    attribute: selected_files[0].attribute.clone(),
-                    time: selected_files[0].time.clone(),
-                    noa: selected_files[0].noa,
-                    is_folder: selected_files[0].is_folder,
-                }
+                return selected_users[0].time;
             }
         }
     }
 
-    pub fn queryFile_Bypath(&self, path: Option<String>) -> Vec<FileItem>{
+    pub fn query_file_list(&self, whose: Option<String>, path: Option<String>) -> Vec<FileItem>{
         let selected_files: Result<Vec<FileItem>, mysql::Error> =
-        self.pool.prep_exec("SELECT * FROM DFS.file WHERE PATH = :path", 
-                params!{"path" => path})
-        .map(|result| { 
-            result.map(|x| x.unwrap()).map(|row| {
-                let (id, name, path, attribute, time, noa, is_folder) = my::from_row(row);
-                FileItem {
-                    id: id,
-                    name: name,
-                    path: path,
-                    attribute: attribute,
-                    time: time,
-                    noa: noa,
-                    is_folder: is_folder,
-                }
-            }).collect()
-        });
+            self.pool.prep_exec("SELECT * FROM DFS.file WHERE WHOSE = :whose AND PATH = :path",
+                                params!{"whose" => whose, "path" => path})
+                .map(|result| {
+                    result.map(|x| x.unwrap()).map(|row| {
+                        let (id, name, path, attribute, time, nod, noa, is_folder, file_type, file_size, whose) = my::from_row(row);
+                        FileItem {
+                            id: id,
+                            name: name,
+                            path: path,
+                            attribute: attribute,
+                            time: time,
+                            nod: nod,
+                            noa: noa,
+                            is_folder: is_folder,
+                            file_type: file_type,
+                            file_size: file_size,
+                            whose: whose,
+                        }
+                    }).collect()
+                });
         if let Err(e) = selected_files {
             let file = FileItem {
-                id: -1, 
-                name: "".to_string(), 
-                path: "".to_string(), 
+                id: -1,
+                name: "".to_string(),
+                path: "".to_string(),
+                attribute: "".to_string(),
+                time: "".to_string(),
+                nod: 0,
+                noa: 0,
+                is_folder: false,
+                file_type: "".to_string(),
+                file_size: 0,
+                whose: "".to_string(),
+            };
+            return vec![file];
+        }
+        let files = selected_files.unwrap();
+        if files.len() == 0 {
+            let file =  FileItem {
+                id: 0,
+                name: "".to_string(),
+                path: "".to_string(),
+                attribute: "".to_string(),
+                time: "".to_string(),
+                nod: 0,
+                noa: 0,
+                is_folder: false,
+                file_type: "".to_string(),
+                file_size: 0,
+                whose: "".to_string(),
+            };
+            return vec![file];
+        }
+        files
+    }
+
+    pub fn query_fragment(&self, id: i32) -> String{
+        let selected_fragments: Result<Vec<FragmentItem>, mysql::Error> =
+            self.pool.prep_exec("SELECT * FROM DFS.fragment WHERE ID = :id",
+                                params!{"id" => id})
+                .map(|result| {
+                    result.map(|x| x.unwrap()).map(|row| {
+                        let (id, path) = my::from_row(row);
+                        FragmentItem {
+                            id: id,
+                            path: path,
+                        }
+                    }).collect()
+                });
+        match &selected_fragments {
+            Err(e) => {
+                return "".to_string();
+            }
+            Ok(selected_files) => {
+                if selected_files.len() == 0 {
+                    return "".to_string();
+                }
+                return selected_fragments[0].path;
+            }
+        }
+    }
+
+    /*pub fn queryFile_Byid(&self, id: i32) -> FileItem {
+        let selected: Result<Vec<FileItem>, mysql::Error> =
+            self.pool.prep_exec("SELECT * FROM DFS.file WHERE ID = :id",
+                                params!{"id" => id})
+                .map(|result| {
+                    result.map(|x| x.unwrap()).map(|row| {
+                        let (id, name, path, attribute, time, noa, is_folder) = my::from_row(row);
+                        FileItem {
+                            id: id,
+                            name: name,
+                            path: path,
+                            attribute: attribute,
+                            time: time,
+                            noa: noa,
+                            is_folder: is_folder,
+                        }
+                    }).collect()
+                });
+        match &selected {
+            Err(e) => {
+                return FileItem {
+                    id: -1,
+                    name: "".to_string(),
+                    path: "".to_string(),
+                    attribute: "".to_string(),
+                    time: "".to_string(),
+                    noa: 0,
+                    is_folder: false,
+                }
+            }
+            Ok(selected_files) => {
+                if selected_files.len() == 0 {
+                    return FileItem {
+                        id: 0,
+                        name: "".to_string(),
+                        path: "".to_string(),
+                        attribute: "".to_string(),
+                        time: "".to_string(),
+                        noa: 0,
+                        is_folder: false,
+                    }
+                }
+                return FileItem {
+                    id: selected_files[0].id,
+                    name: selected_files[0].name.clone(),
+                    path: selected_files[0].path.clone(),
+                    attribute: selected_files[0].attribute.clone(),
+                    time: selected_files[0].time.clone(),
+                    noa: selected_files[0].noa,
+                    is_folder: selected_files[0].is_folder,
+                }
+            }
+        }
+    }*/
+
+    /*pub fn queryFile_Bypath(&self, path: Option<String>) -> Vec<FileItem>{
+        let selected_files: Result<Vec<FileItem>, mysql::Error> =
+            self.pool.prep_exec("SELECT * FROM DFS.file WHERE PATH = :path",
+                                params!{"path" => path})
+                .map(|result| {
+                    result.map(|x| x.unwrap()).map(|row| {
+                        let (id, name, path, attribute, time, noa, is_folder) = my::from_row(row);
+                        FileItem {
+                            id: id,
+                            name: name,
+                            path: path,
+                            attribute: attribute,
+                            time: time,
+                            noa: noa,
+                            is_folder: is_folder,
+                        }
+                    }).collect()
+                });
+        if let Err(e) = selected_files {
+            let file = FileItem {
+                id: -1,
+                name: "".to_string(),
+                path: "".to_string(),
                 attribute: "".to_string(),
                 time: "".to_string(),
                 noa: 0,
@@ -177,9 +302,9 @@ impl Query {
         let files = selected_files.unwrap();
         if files.len() == 0 {
             let file =  FileItem {
-                id: 0, 
-                name: "".to_string(), 
-                path: "".to_string(), 
+                id: 0,
+                name: "".to_string(),
+                path: "".to_string(),
                 attribute: "".to_string(),
                 time: "".to_string(),
                 noa: 0,
@@ -188,44 +313,21 @@ impl Query {
             return vec![file];
         }
         files
-    }
-    
-    pub fn queryFragment(&self, id: i32) -> String {
-        let selected_fragments: Result<Vec<FragmentItem>, mysql::Error> =
-        self.pool.prep_exec("SELECT * FROM DFS.FRAGMENT WHERE ID = :id", 
-                params!{"id" => id})
-        .map(|result| { 
-            result.map(|x| x.unwrap()).map(|row| {
-                let (id, path) = my::from_row(row);
-                FragmentItem {
-                    id: id,
-                    path: path,
-                }
-            }).collect()
-        });
-        if let Err(e) = selected_fragments {
-            return "".to_string();
-        }
-        let fragment = selected_fragments.unwrap();
-        if fragment.len() == 0 {
-            return "".to_string();
-        }
-        return fragment[0].path.clone().unwrap();
-    }
+    }*/
 
     pub fn queryFragmentNumbers(&self, fileId: i32) -> i32{
         let selected_fragments: Result<Vec<FragmentItem>, mysql::Error> =
-        self.pool.prep_exec("SELECT * FROM DFS.fragment WHERE ID>=:id_1 AND ID<:id_2", 
-                params!{"id_1" => fileId*100, "id_2" => (fileId+1)*100})
-        .map(|result| { 
-            result.map(|x| x.unwrap()).map(|row| {
-                let (id, path) = my::from_row(row);
-                FragmentItem {
-                    id: id,
-                    path: path,
-                }
-            }).collect()
-        });
+            self.pool.prep_exec("SELECT * FROM DFS.fragment WHERE ID>=:id_1 AND ID<:id_2",
+                                params!{"id_1" => fileId*100, "id_2" => (fileId+1)*100})
+                .map(|result| {
+                    result.map(|x| x.unwrap()).map(|row| {
+                        let (id, path) = my::from_row(row);
+                        FragmentItem {
+                            id: id,
+                            path: path,
+                        }
+                    }).collect()
+                });
         if let Err(e) = selected_fragments {
             return -1;
         }
@@ -239,20 +341,22 @@ impl Query {
 
     pub fn queryOnlineDevice(&self) -> Vec<DeviceItem> {
         let selected_devices: Result<Vec<DeviceItem>, mysql::Error> =
-        self.pool.prep_exec("SELECT * FROM DFS.DEVICE WHERE ISONLINE=true ORDER BY RS DESC", 
-                ())
-        .map(|result| { 
-            result.map(|x| x.unwrap()).map(|row| {
-                let (id, ip, port, is_online, rs) = my::from_row(row);
-                DeviceItem {
-                    id: id,
-                    ip: ip,
-                    port: port,
-                    is_online: is_online,
-                    rs: rs,
-                }
-            }).collect()
-        });
+            self.pool.prep_exec("SELECT * FROM DFS.DEVICE WHERE ISONLINE=true ORDER BY RS DESC",
+                                ())
+                .map(|result| {
+                    result.map(|x| x.unwrap()).map(|row| {
+                        let (id, ip, port, is_online, rs, time, leftrs) = my::from_row(row);
+                        DeviceItem {
+                            id: id,
+                            ip: ip,
+                            port: port,
+                            is_online: is_online,
+                            rs: rs,
+                            time: time,
+                            leftrs: leftrs,
+                        }
+                    }).collect()
+                });
         if let Err(e) = selected_devices {
             let file = DeviceItem {
                 id: -1,
@@ -260,6 +364,8 @@ impl Query {
                 port: 0,
                 is_online: false,
                 rs: 0,
+                time: 0,
+                leftrs: 0,
             };
             return vec![file];
         }
@@ -271,6 +377,8 @@ impl Query {
                 port: 0,
                 is_online: false,
                 rs: 0,
+                time: 0,
+                leftrs: 0,
             };
             return vec![file];
         }
@@ -279,20 +387,22 @@ impl Query {
 
     pub fn queryDevice(&self, id: i32) -> DeviceItem {
         let selected_devices: Result<Vec<DeviceItem>, mysql::Error> =
-        self.pool.prep_exec("SELECT * FROM DFS.DEVICE WHERE ID=:id", 
-                params!{"id" => id})
-        .map(|result| { 
-            result.map(|x| x.unwrap()).map(|row| {
-                let (id, ip, port, is_online, rs) = my::from_row(row);
-                DeviceItem {
-                    id: id,
-                    ip: ip,
-                    port: port,
-                    is_online: is_online,
-                    rs: rs,
-                }
-            }).collect()
-        });
+            self.pool.prep_exec("SELECT * FROM DFS.DEVICE WHERE ID=:id",
+                                params!{"id" => id})
+                .map(|result| {
+                    result.map(|x| x.unwrap()).map(|row| {
+                        let (id, ip, port, is_online, rs, time, leftrs) = my::from_row(row);
+                        DeviceItem {
+                            id: id,
+                            ip: ip,
+                            port: port,
+                            is_online: is_online,
+                            rs: rs,
+                            time: time,
+                            leftrs: leftrs,
+                        }
+                    }).collect()
+                });
         if let Err(e) = selected_devices {
             return DeviceItem {
                 id: -1,
@@ -300,6 +410,8 @@ impl Query {
                 port: 0,
                 is_online: false,
                 rs: 0,
+                time: 0,
+                leftrs: 0,
             };
         }
         let devices = selected_devices.unwrap();
@@ -309,24 +421,26 @@ impl Query {
             port: devices[0].port.clone(),
             is_online: devices[0].is_online,
             rs: devices[0].rs,
+            time: devices[0].time,
+            leftrs: devices[0].leftrs,
         }
     }
 
     pub fn queryRequest_Byid(&self, id: i32) -> RequestItem {
         let selected_requests: Result<Vec<RequestItem>, mysql::Error> =
-        self.pool.prep_exec("SELECT * FROM DFS.REQUEST WHERE ID=:id", 
-                params!{"id" => id})
-        .map(|result| { 
-            result.map(|x| x.unwrap()).map(|row| {
-                let (id, type_, fragmentId, deviceId) = my::from_row(row);
-                RequestItem {
-                    id: id,
-                    type_: type_,
-                    fragmentId: fragmentId,
-                    deviceId: deviceId,
-                }
-            }).collect()
-        });
+            self.pool.prep_exec("SELECT * FROM DFS.REQUEST WHERE ID=:id",
+                                params!{"id" => id})
+                .map(|result| {
+                    result.map(|x| x.unwrap()).map(|row| {
+                        let (id, type_, fragmentId, deviceId) = my::from_row(row);
+                        RequestItem {
+                            id: id,
+                            type_: type_,
+                            fragmentId: fragmentId,
+                            deviceId: deviceId,
+                        }
+                    }).collect()
+                });
         if let Err(e) = selected_requests {
             return RequestItem {
                 id: -1,
@@ -354,19 +468,19 @@ impl Query {
 
     pub fn queryFirstRequest_Byid(&self, id: i32) -> RequestItem {
         let selected_requests: Result<Vec<RequestItem>, mysql::Error> =
-        self.pool.prep_exec("SELECT * FROM DFS.REQUEST WHERE DEVICEID=:id LIMIT 1", 
-                params!{"id" => id})
-        .map(|result| { 
-            result.map(|x| x.unwrap()).map(|row| {
-                let (id, type_, fragmentId, deviceId) = my::from_row(row);
-                RequestItem {
-                    id: id,
-                    type_: type_,
-                    fragmentId: fragmentId,
-                    deviceId: deviceId,
-                }
-            }).collect()
-        });
+            self.pool.prep_exec("SELECT * FROM DFS.REQUEST WHERE DEVICEID=:id LIMIT 1",
+                                params!{"id" => id})
+                .map(|result| {
+                    result.map(|x| x.unwrap()).map(|row| {
+                        let (id, type_, fragmentId, deviceId) = my::from_row(row);
+                        RequestItem {
+                            id: id,
+                            type_: type_,
+                            fragmentId: fragmentId,
+                            deviceId: deviceId,
+                        }
+                    }).collect()
+                });
         if let Err(e) = selected_requests {
             return RequestItem {
                 id: -1,
@@ -394,19 +508,19 @@ impl Query {
 
     pub fn queryRequest_Bydeviceid(&self, deviceId: i32) -> RequestItem {
         let selected_requests: Result<Vec<RequestItem>, mysql::Error> =
-        self.pool.prep_exec("SELECT * FROM DFS.REQUEST WHERE DEVICEID=:id", 
-                params!{"id" => deviceId})
-        .map(|result| { 
-            result.map(|x| x.unwrap()).map(|row| {
-                let (id, type_, fragmentId, deviceId) = my::from_row(row);
-                RequestItem {
-                    id: id,
-                    type_: type_,
-                    fragmentId: fragmentId,
-                    deviceId: deviceId,
-                }
-            }).collect()
-        });
+            self.pool.prep_exec("SELECT * FROM DFS.REQUEST WHERE DEVICEID=:id",
+                                params!{"id" => deviceId})
+                .map(|result| {
+                    result.map(|x| x.unwrap()).map(|row| {
+                        let (id, type_, fragmentId, deviceId) = my::from_row(row);
+                        RequestItem {
+                            id: id,
+                            type_: type_,
+                            fragmentId: fragmentId,
+                            deviceId: deviceId,
+                        }
+                    }).collect()
+                });
         if let Err(e) = selected_requests {
             return RequestItem {
                 id: -1,
@@ -434,19 +548,19 @@ impl Query {
 
     pub fn queryRequestNumbers_Byid(&self, deviceId: i32) -> i32 {
         let selected_requests: Result<Vec<RequestItem>, mysql::Error> =
-        self.pool.prep_exec("SELECT * FROM DFS.REQUEST WHERE DEVICEID=:id", 
-                params!{"id" => deviceId})
-        .map(|result| { 
-            result.map(|x| x.unwrap()).map(|row| {
-                let (id, type_, fragmentId, deviceId) = my::from_row(row);
-                RequestItem {
-                    id: id,
-                    type_: type_,
-                    fragmentId: fragmentId,
-                    deviceId: deviceId,
-                }
-            }).collect()
-        });
+            self.pool.prep_exec("SELECT * FROM DFS.REQUEST WHERE DEVICEID=:id",
+                                params!{"id" => deviceId})
+                .map(|result| {
+                    result.map(|x| x.unwrap()).map(|row| {
+                        let (id, type_, fragmentId, deviceId) = my::from_row(row);
+                        RequestItem {
+                            id: id,
+                            type_: type_,
+                            fragmentId: fragmentId,
+                            deviceId: deviceId,
+                        }
+                    }).collect()
+                });
         if let Err(e) = selected_requests {
             return -1;
         }
@@ -459,20 +573,20 @@ impl Query {
 
     pub fn queryRequestNumbers_Byidtype(&self, fileId: i32, type_: i32) -> i32 {
         let selected_requests: Result<Vec<RequestItem>, mysql::Error> =
-        self.pool.prep_exec("SELECT * FROM DFS.REQUEST WHERE FRAGMENTID>=:fid
+            self.pool.prep_exec("SELECT * FROM DFS.REQUEST WHERE FRAGMENTID>=:fid
                 AND FRAGMENTID<:fid2 AND TYPE_=:type_",
-                params!{"fid" => fileId*100, "fid2" => (fileId+1)*100, "type_" => type_})
-        .map(|result| { 
-            result.map(|x| x.unwrap()).map(|row| {
-                let (id, type_, fragmentId, deviceId) = my::from_row(row);
-                RequestItem {
-                    id: id,
-                    type_: type_,
-                    fragmentId: fragmentId,
-                    deviceId: deviceId,
-                }
-            }).collect()
-        });
+                                params!{"fid" => fileId*100, "fid2" => (fileId+1)*100, "type_" => type_})
+                .map(|result| {
+                    result.map(|x| x.unwrap()).map(|row| {
+                        let (id, type_, fragmentId, deviceId) = my::from_row(row);
+                        RequestItem {
+                            id: id,
+                            type_: type_,
+                            fragmentId: fragmentId,
+                            deviceId: deviceId,
+                        }
+                    }).collect()
+                });
         if let Err(e) = selected_requests {
             return -1;
         }
@@ -485,18 +599,20 @@ impl Query {
 
     pub fn queryUserPasswd(&self, name: Option<String>) -> Option<String> {
         let selected_user: Result<Vec<UserItem>, mysql::Error> =
-        self.pool.prep_exec("SELECT * FROM DFS.USER WHERE NAME=:name",
-                params!{"name" => &name})
-        .map(|result| { 
-            result.map(|x| x.unwrap()).map(|row| {
-                let (id, name, passwd) = my::from_row(row);
-                UserItem {
-                    id: id,
-                    name: name,
-                    passwd: passwd,
-                }
-            }).collect()
-        });
+            self.pool.prep_exec("SELECT * FROM DFS.USER WHERE NAME=:name",
+                                params!{"name" => &name})
+                .map(|result| {
+                    result.map(|x| x.unwrap()).map(|row| {
+                        let (id, name, passwd, uris, time) = my::from_row(row);
+                        UserItem {
+                            id: id,
+                            name: name,
+                            passwd: passwd,
+                            uris: uris,
+                            time: time,
+                        }
+                    }).collect()
+                });
         if let Err(e) = selected_user {
             return None;
         }
@@ -509,18 +625,20 @@ impl Query {
 
     pub fn queryUserID(&self, name: Option<String>) -> i32 {
         let selected_user: Result<Vec<UserItem>, mysql::Error> =
-        self.pool.prep_exec("SELECT * FROM DFS.USER WHERE NAME=:name",
-                params!{"name" => &name})
-        .map(|result| { 
-            result.map(|x| x.unwrap()).map(|row| {
-                let (id, name, passwd) = my::from_row(row);
-                UserItem {
-                    id: id,
-                    name: name,
-                    passwd: passwd,
-                }
-            }).collect()
-        });
+            self.pool.prep_exec("SELECT * FROM DFS.USER WHERE NAME=:name",
+                                params!{"name" => &name})
+                .map(|result| {
+                    result.map(|x| x.unwrap()).map(|row| {
+                        let (id, name, passwd, uris, time) = my::from_row(row);
+                        UserItem {
+                            id: id,
+                            name: name,
+                            passwd: passwd,
+                            uris: uris,
+                            time: time,
+                        }
+                    }).collect()
+                });
         if let Err(e) = selected_user {
             return -1;
         }
@@ -532,28 +650,36 @@ impl Query{
     pub fn addFile(&self, mut file:FileItem) -> i32{
         let mut suc:i32 = -1;
         if file.is_folder(){
-            for mut stmt in self.pool.prepare(r"INSERT INTO DFS.FILE (NAME,PATH,ATTRIBUTE,TIME,NOA,ISFOLDER) 
-                VALUES (:name,:path,:attribute,:time,:noa,true);").into_iter() {
+            for mut stmt in self.pool.prepare(r"INSERT INTO DFS.FILE (NAME,PATH,ATTRIBUTE,TIME,NOD,NOA,ISFOLDER,WHOSE,FILETYPE,FILESIZE)
+                VALUES (:name,:path,:attribute,:time,:nod,:noa,true,:whose,:filetype,:filesize);").into_iter() {
                 suc = stmt.execute(params!{
                     "name" => file.get_name(),
                     "path" => file.get_path(),
                     "attribute" => file.get_attribute(),
                     "time" => file.get_time(),
-                    "noa" => file.get_noa()
+                    "nod" => file.get_nod(),
+                    "noa" => file.get_noa(),
+                    "whose" => file.get_whose(),
+                    "filetype" => file.get_file_type(),
+                    "filesize" => file.get_file_size()
                 }).unwrap().last_insert_id().try_into().unwrap();
-            //此处未处理execute不成功时，返回-1的情况
+                //此处未处理execute不成功时，返回-1的情况
             }
         } else {
-            for mut stmt in self.pool.prepare(r"INSERT INTO DFS.FILE (NAME,PATH,ATTRIBUTE,TIME,NOA,ISFOLDER) 
-                VALUES (:name,:path,:attribute,:time,:noa,false);").into_iter() {
-                suc = stmt.execute(params!{
-                    "name" => file.get_name(),
-                    "path" => file.get_path(),
-                    "attribute" => file.get_attribute(),
-                    "time" => file.get_time(),
-                    "noa" => file.get_noa()
-                }).unwrap().last_insert_id().try_into().unwrap();
-            //此处未处理execute不成功时，返回-1的情况
+            for mut stmt in self.pool.prepare(r"INSERT INTO DFS.FILE (NAME,PATH,ATTRIBUTE,TIME,NOD,NOA,ISFOLDER,WHOSE,FILETYPE,FILESIZE)
+            VALUES (:name,:path,:attribute,:time,:nod,:noa,false,:whose,:filetype,:filesize);").into_iter() {
+            suc = stmt.execute(params!{
+                "name" => file.get_name(),
+                "path" => file.get_path(),
+                "attribute" => file.get_attribute(),
+                "time" => file.get_time(),
+                "nod" => file.get_nod(),
+                "noa" => file.get_noa(),
+                "whose" => file.get_whose(),
+                "filetype" => file.get_file_type(),
+                "filesize" => file.get_file_size()
+            }).unwrap().last_insert_id().try_into().unwrap();
+                //此处未处理execute不成功时，返回-1的情况
             }
         }
         return suc;
@@ -565,7 +691,7 @@ impl Query{
             stmt.execute(params!{
                 "id" => id
             }).unwrap();
-        //此处未处理execute不成功时，返回-1的情况
+            //此处未处理execute不成功时，返回-1的情况
         }
         suc = 1;
         return suc;
@@ -582,9 +708,9 @@ impl Query{
                     "attribute" => file.get_attribute(),
                     "time" => file.get_time(),
                     "noa" => file.get_noa(),
-                    "id" => file.get_id() 
+                    "id" => file.get_id()
                 }).unwrap().last_insert_id() as i32;
-            //此处未处理execute不成功时，返回-1的情况
+                //此处未处理execute不成功时，返回-1的情况
             }
         } else {
             for mut stmt in self.pool.prepare(r"UPDATE DFS.FILE SET NAME=:name,PATH=:path,ATTRIBUTE=:attribute,
@@ -595,14 +721,14 @@ impl Query{
                     "attribute" => file.get_attribute(),
                     "time" => file.get_time(),
                     "noa" => file.get_noa(),
-                    "id" => file.get_id() 
+                    "id" => file.get_id()
                 }).unwrap().last_insert_id() as i32;
-            //此处未处理execute不成功时，返回-1的情况
+                //此处未处理execute不成功时，返回-1的情况
             }
         }
         suc = 1;
         return suc;
-    }
+    }*/
 
     pub fn alterDevice(&self, mut device:DeviceItem) -> i32{
         //println!("enter alterDevice");//note:by lyf
@@ -610,11 +736,12 @@ impl Query{
         let mut suc:i32 = -1;
         if device.is_online(){
             for mut stmt in self.pool.prepare("UPDATE DFS.DEVICE SET IP=:ip,PORT=:port,ISONLINE=true,
-            RS=:rs WHERE id=:id;").into_iter() {
+            RS=:rs,LEFTRS=:leftrs WHERE id=:id;").into_iter() {
                 let res = stmt.execute(params!{
                     "ip" => device.get_ip(),
                     "port" => device.get_port(),
                     "rs" => device.get_rs(),
+                    "leftrs" => device.get_leftrs(),
                     "id" => device.get_id()
                 });
                 suc = match res{
@@ -622,23 +749,24 @@ impl Query{
                     Err(_) => -1
                 };
             }
-            
+
         } else {
             for mut stmt in self.pool.prepare(r"UPDATE DFS.DEVICE SET IP=:ip,PORT=:port,ISONLINE=false,
-            RS=:rs WHERE id=:id;").into_iter() {
+            RS=:rs,LEFTRS=:leftrs WHERE id=:id;").into_iter() {
                 let res = stmt.execute(params!{
                     "ip" => device.get_ip(),
                     "port" => device.get_port(),
                     "rs" => device.get_rs(),
+                    "leftrs" => device.get_leftrs(),
                     "id" => device.get_id()
-                });    
+                });
                 suc = match res{
                     Ok(_) => 1,
                     Err(_) => -1
-                };   
+                };
             }
-            
-        }       
+
+        }
         return suc;
     }
 
@@ -655,7 +783,7 @@ impl Query{
             };
         }
         return suc;
-    } 
+    }
 
     pub fn deleteFragment(&self,id:i32) -> i32{
         let mut suc:i32 = -1;
@@ -695,7 +823,7 @@ impl Query{
                 "fragmentid" => request.get_fragment_id(),
                 "deviceid" => request.get_device_id()
             }).unwrap().last_insert_id().try_into().unwrap();
-        //此处未处理execute不成功时，返回-1的情况
+            //此处未处理execute不成功时，返回-1的情况
         }
         suc = 1;
         return suc;
