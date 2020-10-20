@@ -14,6 +14,7 @@ use std::path::PathBuf;
 //use std::option::NoneError;
 use std::option::Option;
 use std::time::Duration;
+use std::fs;
 
 
 //note:by lyf
@@ -39,7 +40,7 @@ pub struct FragmentManager{
 
 
 impl FragmentManager {
-    pub fn new(rId : i32, fId : i32, t : i32)->FragmentManager{
+    pub fn new(&self,rId : i32, fId : i32, t : i32)->FragmentManager{
         FragmentManager{
             /*fragmentFolder : String :: new(),
             serverIP : String :: new(),
@@ -53,14 +54,14 @@ impl FragmentManager {
             //inFromServer: BufReader :: new(l),
             requestID : rId,
             fragmentID : fId,
-            Type : t//type为Rust关键字，改为大写开头
-				 user:None	//新添的websocket部分，在另一构造方法中初始化
+            Type : t,//type为Rust关键字，改为大写开头
+			user:None	//新添的websocket部分，在另一构造方法中初始化
         }
     }
 		//原dontpanic组中此为另一构造方法，此处改为new_user()
-	  pub fn new_user(iUser:WebSocket){
-			self.user = iUser;
-		}
+	pub fn new_user(&mut self,iUser:WebSocket){
+		self.user = iUser;
+	}
 
     /*pub fn init0(&mut self, tmp : String, ip : String, port : i32){
         self.fragmentFolder = tmp;
@@ -68,7 +69,7 @@ impl FragmentManager {
         self.serverPort = port;
     }*/
 
-    pub fn run(){
+    pub fn run(&mut self){
         // 暂不进行并发数据操作
         //websocket的recv（）返回byte[]，这里可能有bug
 			let msg:String = String::new(user.recv());
@@ -166,7 +167,7 @@ impl FragmentManager {
         s.push_str(&self.fragmentFolder);
         s.push('\\');
         //s.push_str(&self.fragmentID.to_string());
-        s.push_str(fileName);
+        s.push_str(&fileName);
 			println!("{}", s);
         let mut path = Path::new(&s);
         //可能会根据运行平台的不同添加/,分为posix和windows
@@ -208,7 +209,7 @@ impl FragmentManager {
         s.push_str(&self.fragmentFolder);
         s.push('/');
         //s.push_str(&self.fragmentID.to_string());
-			s.push_str(fileName);
+			s.push_str(&fileName);
         let mut path = Path::new(&s);
         //可能会根据运行平台的不同添加/,分为posix和windows
         let mut f = File::create(&path).unwrap();
@@ -252,33 +253,37 @@ impl FragmentManager {
     }
 
 		
-	 fn sendDigest(fileName:String) -> bool {
+	 fn sendDigest(&self,fileName:String) -> bool {
 		let mut status:bool = false;
 		let mut sentence:String;
 
 		let mut s = String::new();
       s.push_str(&self.fragmentFolder);
       s.push('/');
-		s.push_str(fileName);
+		s.push_str(&fileName);
 		s.push_str(".digest");
-     let mut path = Path::new(&s);
+        let mut path = Path::new(&s);
 		let mut f = File::open(&path).unwrap();
-		user.sendMessage(fs::read_to_string(path));
+		self.user.sendMessage(fs::read_to_string(path));
 		return true;
 	 }
 
-	  fn recvDigest(fileName:String) -> bool{
+	fn recvDigest(&self,fileName:String) -> bool{
 		let mut s = String::new();
-      s.push_str(&self.fragmentFolder);
-      s.push('/');
-		s.push_str(fileName);
+        s.push_str(&self.fragmentFolder);
+        s.push('/');
+		s.push_str(&fileName);
 		s.push_str(".digest");
-		
+		let mut path = Path::new(&s);
+		//let mut f = File::open(&path).unwrap();
 		//dontpanic中recv_bytes为byte[]类型
 		let mut recv_bytes:Vec<u8> = self.user.recv();
-		println!("recvDigest : {}",)
-
-		}
+		println!("recvDigest : {:?}",recv_bytes);//不确定能否输出string
+        fs::write(path,recv_bytes); 
+        self.user.sendMessage("digest success");
+        return true;//TODO
+    }
+    
     fn deleteFragment(&mut self) -> bool {
         let mut s = String:: new();
         s.push_str(&self.fragmentFolder);
@@ -288,6 +293,7 @@ impl FragmentManager {
         //可能会根据运行平台的不同添加/,分为posix和windows
         let mut f = File::create(path).unwrap();
         remove_file(path);
+        /*dontpanic删除
         match &mut self.toServer {
             None => println!("Error"),
             Some(socket) => {
@@ -307,7 +313,8 @@ impl FragmentManager {
                 }
             }
 
-        }
+        }*/
+        
         return true;//不知道为什么最后不加返回值就报错
     }
 
