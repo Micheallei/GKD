@@ -38,17 +38,20 @@ impl ClientThread{
                     }
                     //println!("controlconnect--clientthread--准备修改device");
                     let client_addr = self.client_socket.peer_addr().unwrap();
-                    let port = client_addr.port();
+                    //let port = client_addr.port();
                     let rs: i32 = s[2].trim().parse().unwrap();
-                    let ip = client_addr.ip();
+                    //let ip = client_addr.ip();
 
                     //println!("controlconnect--queryDevice所用的id：{}",id);
                     let query = Query::new();
                     let mut deviceitem = query.queryDevice(id);
-
+                    if(deviceitem.id == -1) {
+                        println!("No such device ID!");
+                        return 0;
+                    }
                     self.client_id = id;
-                    deviceitem.set_ip(ip.to_string());
-                    deviceitem.set_port(port.try_into().unwrap());
+                    //deviceitem.set_ip(ip.to_string());
+                    //deviceitem.set_port(port.try_into().unwrap());
                     deviceitem.set_is_online(true);
                     deviceitem.set_rs(rs);
                     if query.alterDevice(deviceitem) == -1 {
@@ -79,7 +82,37 @@ impl ClientThread{
                         request.get_id(), request.get_fragment_id(), request.get_type()));
                     self.client_socket.flush();
                     return 1
+                } else if c == '3' {
+                    let s: Vec<&str> = sentence.split(' ').collect();
+                    let id: i32 = s[1].trim().parse().unwrap();
 
+                    if self.client_id != -1 && self.client_id != id{
+                        self.client_socket.write(b"Error!\n");
+                        self.client_socket.flush();
+                        return 0
+                    }
+
+                    let ip:String = s[2];
+                    let port:i32 = s[3].trim().parse().unwrap();
+
+                    let query = Query::new();
+                    let mut deviceitem = query.queryDevice(id);
+                    if deviceitem.id == -1 {
+                        // 不允许通过报文新建client
+                        println!("No such device ID!");
+                        return 0;
+                    } else {
+                        self.client_id = id;
+                        deviceitem.set_ip(ip.to_string());
+                        deviceitem.set_port(port.try_into().unwrap());
+                        //deviceitem.set_is_online(true);
+                        //deviceitem.set_rs(rs);
+                        query.alterDevice(deviceitem);
+                    }
+
+                    self.client_socket.write_fmt(format_args!("set ip={}, port={} successfully\n", ip,port));
+                    self.client_socket.flush();
+                    return 1;
                 }
             },
         };
