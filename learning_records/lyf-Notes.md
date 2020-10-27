@@ -219,3 +219,43 @@ Sets this scanner's delimiting pattern to a pattern constructed from the specifi
 **java.util.regex**
 
 关于matcher和pattern的解释：https://www.cnblogs.com/wang-zai/p/7802622.html
+
+#### dontpanic API function
+
+ 存储端相当于服务器，以init传进来的port建立一个Serversocket server,用此server去accept()
+
+```
+public ServerSocket(int port)
+
+通过一个端口来构造一个ServerSocket对象。
+默认的tcp队列大小为50.
+默认监听本地所有的ip地址（如果有多个网卡）。
+```
+
+使用到此 API 的客户端代码
+
+1. connect::FragmentManager.java
+
+   成员变量 Websocket user
+
+   ```
+   sendFile(f)	//File
+   recvFile(f)	//新File 写入其中
+   sendMessage("fragment success")
+   sendMessage(new String(Files.readAllBytes(f.toPath())));
+   recv() -> String	//改为直接返回string？
+   echo()
+   close
+   ```
+
+   
+
+2. connect::RequestManager.java
+
+   ```
+   WebSocket.init(port)
+   println(user) ??
+   new FragmentManager(user)
+   ```
+
+   
