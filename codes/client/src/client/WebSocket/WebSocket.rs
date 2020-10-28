@@ -43,4 +43,40 @@ impl WebSocket{
         let mut f:File = File::open(&f_path.as_path()).unwrap();
         sendBin()
     }
+
+    pub recv() -> Vec<Vec<u8>> {
+        let receive_loop = thread::spawn(move || {
+            // Receive loop
+            for message in receiver.incoming_messages() {
+                let message = match message {
+                    Ok(m) => m,
+                    Err(e) => {
+                        println!("Receive Loop: {:?}", e);
+                        let _ = tx_1.send(OwnedMessage::Close(None));
+                        return;
+                    }
+                };
+                match message {
+                    OwnedMessage::Close(_) => {
+                        // Got a close message, so send a close message and return
+                        println!("closed!");
+                        let _ = tx_1.send(OwnedMessage::Close(None));
+                        return;
+                    }
+                    OwnedMessage::Ping(data) => {
+                        match tx_1.send(OwnedMessage::Pong(data)) {
+                            // Send a pong in response
+                            Ok(()) => (),
+                            Err(e) => {
+                                println!("Receive Loop: {:?}", e);
+                                return;
+                            }
+                        }
+                    }
+                    // Say what we received
+                    _ => println!("Receive Loop: {:?}", message),
+                }
+            }
+        });
+    }
 }
