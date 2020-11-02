@@ -1,3 +1,5 @@
+use log::{info,warn,debug,error,trace};
+use log4rs;
 use std::net::{TcpListener, TcpStream};
 use std::thread;
 

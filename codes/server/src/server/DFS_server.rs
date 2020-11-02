@@ -1,4 +1,6 @@
 use std::thread;
+use log::{info,warn,debug,error,trace};
+use log4rs;
 
 pub struct DFS_server {
     connecting: bool,
@@ -10,6 +12,7 @@ impl DFS_server {
         let query = Query::new();
         let devices:Vec<DeviceItem> = query.queryOnlineDevice();
         if !devices.is_empty() {
+            info!("There are {} devices on line",devices.len());
             for device in &mut devices {
                 device.set_is_online(false);
                 query.alterDevice(device);

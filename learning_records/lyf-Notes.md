@@ -1,6 +1,6 @@
 # Notes
 
-## I llw组项目总结
+## I dontpanic组项目总结
 
 ### 1.1 结题报告摘录笔记
 
@@ -258,4 +258,105 @@ public ServerSocket(int port)
    new FragmentManager(user)
    ```
 
+
+
+### log 日志
+
+create console_log : https://docs.rs/console_log/0.2.0/console_log/ （专为webassembly设计的日志库）
+
+**Crate log4rs** ：https://docs.rs/log4rs/0.13.0/log4rs/ （查阅资料后，log4rs比较适合将日志输出到文件中，其他的比较适合打印到控制台）
+
+一篇比较详细的文档：https://zhuanlan.zhihu.com/p/104921298
+
+- **日志配置**
+
+```
+//Cargo.toml
+[dependencies]
+log = "0.4.8"
+log4rs = "0.10.0"
+```
+
+使用 yaml 格式文件做 log 日志的配置，log4rs.yaml放在项目根目录下（与cargo.toml同级）
+
+```
+---
+# log4rs.yaml
+# 检查配置文件变动的时间间隔
+refresh_rate: 30 seconds
+# appender 负责将日志收集到控制台或文件, 可配置多个
+appenders:
+  stdout:
+    kind: console
+  file:
+    kind: file
+    path: "log/log.log"
+    encoder:
+      # log 信息模式
+      pattern: "[{d(%Y-%m-%d %H:%M:%S)}] {l} {{{M} line {L}}} {m}{n}"
+# 对全局 log 进行配置
+root:
+  level: trace
+  appenders:
+    - stdout
+    - file
+```
+
+优先级：ERROR > WARN > INFO > DEBUG > TRACE
+
+注意：yaml 文件中 level 设置为最低优先级，即设置为trace时，以上五个level的日志都被允许输出，若设置为error，则只输出 error
+
+```
+//在每个需要用到日志输出的文件中加上macro
+use log::{info,warn,debug,error,trace};
+use log4rs;
+```
+
+```
+//在main.rs中加载配置文件
+fn main() {
+    println!("Hello, world!");
+    log4rs::init_file("log4rs.yaml", Default::default()).unwrap();
+}
+```
+
+目前测试效果如图：
+
+![](C:\Users\12935\Pictures\Screenshots\QQ图片20201102202559.png)
+
+- **日志设计**
+
+1. client
+
    
+
+2. server
+
+   
+
+关键是 warn 和 error 怎么设置？可以在调试过程中慢慢摸索？
+
+是否要将不同模块的log分开？比如database的返回结果是否暂存？
+
+注意log日志也不要太多，否则容易造成过多性能损耗
+
+原程序中的一些println!改成日志？可以同时输出日志/控制台
+
+连接时的 ip port 可以考虑以 info 形式输出
+
+如果系统崩溃，根据log日志重现是指手工重现吗？
+
+
+
+### 服务器中转
+
+留着原来的服务端的一些功能(中转功能),提供两种文件传输方式,避免本地负担过重：lyf、sym
+
+一些想法：
+
+- 服务器从browser接收一部分碎片：upload
+  - online客户机过少时，自动使用服务器中转机制，让服务器分担一部分负载？
+  - 不把选择权交给用户，建议由服务器判断是否分担
+- 服务器负责从客户端收集碎片，解码后直接发给浏览器？download
+  - 浏览器端编解码负担重时，如何传递此消息？
+
