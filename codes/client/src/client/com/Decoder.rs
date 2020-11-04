@@ -2,7 +2,6 @@
 //extern crate reed_solomon_erasure;
 
 use reed_solomon_erasure::galois_8::ReedSolomon;
-use std::path;
 use std::path::Path;
 use std::path::PathBuf;
 use std::fs::File;

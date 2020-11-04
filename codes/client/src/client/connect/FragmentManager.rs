@@ -15,6 +15,7 @@ use std::path::PathBuf;
 use std::option::Option;
 use std::time::Duration;
 use std::fs;
+use crate::client::WebSocket::WebSocket::WebSocket;
 
 
 //note:by lyf
@@ -27,40 +28,36 @@ static mut sta_selfPort:i32 = -1;
 
 pub struct FragmentManager{
     fragmentFolder : String,
-    serverIP : String,
-    serverPort : i32,
-    controlPort : u16,
-    toServer : Option<TcpStream>,
-    //inFromServer : BufReader<TcpStream>,
-    requestID : i32,
-    fragmentID : i32,
-    Type : i32,
     user:WebSocket
 }
 
 
 impl FragmentManager {
-    pub fn new(&self,rId : i32, fId : i32, t : i32)->FragmentManager{
-        FragmentManager{
-            /*fragmentFolder : String :: new(),
-            serverIP : String :: new(),
-            serverPort : -1,*/ //note:by lyf
-            fragmentFolder :unsafe{ sta_fragmentFolder.clone()},
-            serverIP : unsafe{sta_serverIP.clone()},
-            serverPort :unsafe{ sta_serverPort},
+    // pub fn new(rId : i32, fId : i32, t : i32)->FragmentManager{
+    //     FragmentManager{
+    //         /*fragmentFolder : String :: new(),
+            // serverIP : String :: new(),
+            // serverPort : -1,*/ //note:by lyf
+            // fragmentFolder :unsafe{ sta_fragmentFolder.clone()},
+            // serverIP : unsafe{sta_serverIP.clone()},
+            // serverPort :unsafe{ sta_serverPort},
 
-            controlPort : 0,
-            toServer : None,
-            //inFromServer: BufReader :: new(l),
-            requestID : rId,
-            fragmentID : fId,
-            Type : t,//type为Rust关键字，改为大写开头
-			user:None	//新添的websocket部分，在另一构造方法中初始化
-        }
-    }
+            // controlPort : 0,
+            // toServer : None,
+    //         //inFromServer: BufReader :: new(l),
+    //         requestID : rId,
+    //         fragmentID : fId,
+    //         Type : t,//type为Rust关键字，改为大写开头
+	// 		user:None	//新添的websocket部分，在另一构造方法中初始化
+    //     }
+    // }
 		//原dontpanic组中此为另一构造方法，此处改为new_user()
-	pub fn new_user(&mut self,iUser:WebSocket){
-		self.user = iUser;
+	pub fn new_user(iUser:WebSocket) -> FragmentManager{
+        FragmentManager{
+            fragmentFolder :unsafe{ sta_fragmentFolder.clone()},
+            user:iUser
+        }
+		
 	}
 
     /*pub fn init0(&mut self, tmp : String, ip : String, port : i32){
@@ -72,19 +69,19 @@ impl FragmentManager {
     pub fn run(&mut self){
         // 暂不进行并发数据操作
         //websocket的recv（）返回byte[]，这里可能有bug
-			let msg:String = String::new(user.recv());
+			let msg:String = String::new(self.user.recv());
 			println!("msg:{}",msg);
 			//TODO token
 			//字符串比较相等，我忘了怎么比较了……，可能有bug
 			if(msg=="U"){
 				println!("Upload");
-				let fileName:String = String::new(user.recv());
+				let fileName:String = String::new(self.user.recv());
 				println!("{}",fileName);
 				self.recvDigest(fileName);
 				self.recvFragment(fileName);
 			} else if(msg == "D"){
 					println!("Download");
-					let fileName:String = String::new(user.recv());
+					let fileName:String = String::new(self.user.recv());
 					println!("{}",fileName);
 					self.sendFragment(fileName);
 					self.sendDigest(fileName);

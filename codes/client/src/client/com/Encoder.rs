@@ -3,8 +3,6 @@
 
 use reed_solomon_erasure::galois_8::ReedSolomon;
 use std::fs::File;
-use std::path;
-use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 use std::convert::TryInto;

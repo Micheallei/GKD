@@ -72,7 +72,8 @@ impl ServerConnecter{
                     let socket_read = socket.try_clone().expect("clone failed...");
                     let mut in_from_server = BufReader::new(socket_read);
                     //dontpanic新加
-                    socket.write_fmt(format_args!("3 {} {} {}\n", self.client_id.to_string(),self.selfIp,self.selfDataPort);//TODO:err handle
+                    socket.write_fmt(format_args!("3 {} {} {}\n", self.client_id.to_string(),self.selfIp,self.selfDataPort));
+                    //TODO:err handle
                     socket.flush();//TODO:err
                     input_buf.clear();
                     in_from_server.read_line(&mut input_buf).unwrap();

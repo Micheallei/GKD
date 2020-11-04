@@ -1,11 +1,12 @@
 use std::thread; 
-use std::time::Duration; 
-use std::sync::mpsc;
 use std::sync::{Arc, Mutex, Condvar};
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::path::PathBuf;
+
+static mut sta_rs:i32 = -1;
+
 pub fn main() {
     let mut clientId:i32 = 0;
     //let mut uploadFolders:Vec<PathBuf> = Vec::new();
@@ -58,8 +59,8 @@ pub fn main() {
 
     line.clear();
     fin.read_line(&mut line).unwrap(); 
-    rs = line.trim().parse::<i32>().unwrap();
-    println!("rs:{}\n",rs);
+    sta_rs = line.trim().parse::<i32>().unwrap();
+    println!("rs:{}\n",sta_rs);
     //setup 返回
 
     /*dontpanic组中代码无此部分
@@ -95,16 +96,16 @@ pub fn main() {
     }
 
     crate::client::connect::FragmentManager::FragmentManager::init(&file1);
-    let mut file2 = PathBuf::from(&tmpFragmentFolder);
+    let mut file2 = PathBuf::from(&fragmentFolder);
     if !file2.exists() || !file2.is_dir(){
         println!("file2 wrong");
         return;
     }
 
     //crate::client::fileDetector::FolderScanner::FolderScanner::init(&file2);
-    crate::client::fileDetector::FolderScanner::FolderScanner::init(&tmpFragmentFolder);
+    //crate::client::fileDetector::FolderScanner::FolderScanner::init(&tmpFragmentFolder);
     //crate::client::fileDetector::FileUploader::FileUploader::init(&file2,&serverIp,&(dataPort as u16)); //note:(by lyf) 类型转换
-    crate::client::fileDetector::FileUploader::FileUploader::init(&tmpFragmentFolder,&serverIp,&(dataPort as u16)); //note:(by lyf) 类型转换
+    //crate::client::fileDetector::FileUploader::FileUploader::init(&tmpFragmentFolder,&serverIp,&(dataPort as u16)); //note:(by lyf) 类型转换
     //note:by lyf  由于全局变量pathbuf类型难以实现，故传String
 
     //线程创建
@@ -126,7 +127,7 @@ pub fn main() {
     });*/
 
     let handle2 = thread::spawn(move || {
-        let requestManager = crate::client::fileDetector::RequestManager::RequestManager::new(selfDataPort,selfIp);
+        let requestManager = crate::client::connect::RequestManager::RequestManager::new(selfDataPort,selfIp);
         requestManager.run(fileDetector_status);
         });
 
@@ -150,5 +151,5 @@ pub fn main() {
 //java中按类实现，但全写在main里rs是main中定义的变量，此处有bug
 pub fn getRs() -> i32 {
     //返回剩余容量,待实现
-	return rs;	
+	return sta_rs;	
 }
