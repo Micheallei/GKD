@@ -12,7 +12,7 @@ static mut sta_port:i32 = -1;
 
 struct WebSocket{
     server:websocket::server::sync::Server,
-    client:// 类型?
+    client:websocket::sync::Client// 类型?
 }
 
 impl WebSocket{
