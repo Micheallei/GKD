@@ -258,6 +258,86 @@ public ServerSocket(int port)
    new FragmentManager(user)
    ```
 
+#### 解决方案
+
+问题1：在原java代码中，server是一个Websocket类的类变量，声明为static,使用init对其初始化。参考以往方法，应将类变量改为全局变量，在每次new时使用全局变量进行赋值，但rust中无这种类型的全局变量。
+
+```java
+public class WebSocket {
+    private static ServerSocket server;
+    private Socket client;
+    private InputStream in;
+    private OutputStream out;
+
+    public static void init(int port) throws IOException {
+        //System.out.println(port);
+        server = new ServerSocket(port);
+    }
+}
+```
+
+- 解决：
+
+  研究client结构发现，client.rs（中的main）开启两个thread，分别是serverconnect和requestManager。而requestmanager负责init Websocket（相当于bind），然后new Websocket（在new中server会accept一个client），并将此Websocket作为参数传递给FragmentManager的构造方法，即`FragmentManager fragmentManager = new FragmentManager(user);`  。
+
+  现将代码改为，在requestManager线程中直接`server:Server::bind(addr).unwrap()` ，将server套接字作为RequestManager的一个成员变量，而不是Websocket的成员变量。并在每次new Websocket时（即需要用此server来accept一个客户端套接字），将此server传入new中，返回一个只含client套接字的Websocket实例。
+
+  ```rust
+  pub struct WebSocket{
+      client:websocket::sync::Client<std::net::TcpStream>
+  }
+  ```
+  
+
+问题2：在crate websocket给的example代码中，使用for循环不断处理request，并用request（类型为websocket::server::upgrade::WsUpgrade<std::net::TcpStream,std::option::Option<websocket::server::upgrade::sync::Buffer>>）判断使用协议是否为websocket，但每次new时，我们其实只需要一个request，进行一次accept，如何令循环只执行一次，且能合理进行return。
+
+```rust
+//example的做法
+for request in server.filter_map(Result::ok) {
+		// Spawn a new thread for each connection.
+		thread::spawn(move || {
+			if !request.protocols().contains(&"rust-websocket".to_string()) {
+				request.reject().unwrap();
+				return;
+			}
+
+			let mut client = request.use_protocol("rust-websocket").accept().unwrap();
+
+		});
+	}
+```
+
+- 问题分析：
+
+  - 没有在server的方法中找到一种方法，可以直接生成request这种类型的结果
+  - 直接使用server的accept()方法，则会舍弃判断协议是否为websocket的功能
+
+- 解决：
+
+  在查阅了大量server，request，filter_map 的方法后，为了保证以上两个功能，最终还是决定使用filter_map方法生成一个filter_map的迭代器，然后利用迭代器的next()获取元素（相当于一个for循环的具体实现），最终代码如下：
+
+  ```rust
+  pub fn new(server: &websocket::server::WsServer<websocket::server::NoTlsAcceptor, std::net::TcpListener>) -> WebSocket{
+          let request = server.filter_map(Result::ok).next().unwrap();
+          // 此处filter_map()返回值是一个迭代器，使用next()方法获得其中一个元素
+          thread::spawn(move || {
+              if !request.protocols().contains(&"rust-websocket".to_string()) {
+                  request.reject().unwrap();
+                  return;
+                  // TODO: 接到的连接不是websocket协议时，输出错误信息到log
+              }
+              return;
+          });
+     
+          let client = request.use_protocol("rust-websocket").accept().unwrap();
+          WebSocket{
+              client:client
+          }   
+      }
+  ```
+
+  
+
 
 
 ### log 日志
@@ -336,7 +416,11 @@ fn main() {
 
 关键是 warn 和 error 怎么设置？可以在调试过程中慢慢摸索？
 
+- 存储端、服务端
+
 是否要将不同模块的log分开？比如database的返回结果是否暂存？
+
+- 放在一起
 
 注意log日志也不要太多，否则容易造成过多性能损耗
 
@@ -354,8 +438,8 @@ fn main() {
 
 一些想法：
 
-- 服务器从browser接收一部分碎片：upload
-  - online客户机过少时，自动使用服务器中转机制，让服务器分担一部分负载？
+- 服务器从browser接收一部分碎片：upload √
+  - online客户机过少时，自动使用服务器中转机制，让服务器分担一部分负载
   - 不把选择权交给用户，建议由服务器判断是否分担
 - 服务器负责从客户端收集碎片，解码后直接发给浏览器？download
   - 浏览器端编解码负担重时，如何传递此消息？
