@@ -23,15 +23,15 @@ pub struct FileUploader{
     path: String,
     fileName: String,
     result: String,
-    devices: serde_json,//??
+    devices: Value,
     fileType: String,
     fileSize: i32,
     noa: i32,
     nod: i32,
     whose: String,
     fileId: i32,
-    fragmentFolderPath:PathBuf,
-    fileFolderPath:PathBuf,
+    //fragmentFolderPath:PathBuf,
+    //fileFolderPath:PathBuf,
 
 }
 
@@ -53,15 +53,15 @@ impl FileUploader{
             nod: 0,
             whose: String::new(),
             fileId: 0,
-            fragmentFolderPath:PathBuf::from("/usr/local/tomcat/webapps/DFS/CloudDriveServer/downloadFragment"),
-            fileFolderPath:PathBuf::from("/usr/local/tomcat/webapps/DFS/CloudDriveServer/tmpFile"),
+            //fragmentFolderPath:PathBuf::from("/usr/local/tomcat/webapps/DFS/CloudDriveServer/downloadFragment"),
+            //fileFolderPath:PathBuf::from("/usr/local/tomcat/webapps/DFS/CloudDriveServer/tmpFile"),
         }
     }
     pub fn getPath(&self) -> String{
         return self.path.clone();
     }
 
-    pub fn setPath(mut self, npath: String){
+    pub fn setPath(&mut self, npath: String){
         self.path = npath;
     }
 
@@ -69,7 +69,7 @@ impl FileUploader{
         return self.result.clone();
     }
 
-    pub fn setResult(mut self, nresult: String){
+    pub fn setResult(&mut self, nresult: String){
         self.result = nresult;
     }
 
@@ -77,15 +77,15 @@ impl FileUploader{
         return self.fileName.clone();
     }
 
-    pub fn setFileName(mut self, nfileName: String){
+    pub fn setFileName(&mut self, nfileName: String){
         self.fileName = nfileName;
     }
 
-    pub fn getDevices(&self) -> serde_json{
+    pub fn getDevices(&self) -> Value{
         return self.devices.clone();//?
     }
 
-    pub fn setDevices(mut self, ndevices: serde_json){
+    pub fn setDevices(&mut self, ndevices: Value){
         //let s: String = String::from(ndevices.to_string());
         //self.devices = serde_json:: from_str(&s);
         self.devices = ndevices;
@@ -95,7 +95,7 @@ impl FileUploader{
         return self.fileType.clone();
     }
 
-    pub fn setFileType(mut self, nfileType: String){
+    pub fn setFileType(&mut self, nfileType: String){
         self.fileType = nfileType;
     }
 
@@ -103,7 +103,7 @@ impl FileUploader{
         return self.fileSize.clone();
     }
 
-    pub fn setFileSize(mut self, nfileSize: i32){
+    pub fn setFileSize(&mut self, nfileSize: i32){
         self.fileSize = nfileSize;
     }
 
@@ -111,7 +111,7 @@ impl FileUploader{
         return self.noa.clone();
     }
 
-    pub fn setNoa(mut self, nnoa: i32){
+    pub fn setNoa(&mut self, nnoa: i32){
         self.noa = nnoa;
     }
 
@@ -119,7 +119,7 @@ impl FileUploader{
         return self.nod.clone();
     }
 
-    pub fn setNod(mut self, nnod: i32){
+    pub fn setNod(&mut self, nnod: i32){
         self.nod = nnod;
     }
 
@@ -127,7 +127,7 @@ impl FileUploader{
         return self.whose.clone();
     }
 
-    pub fn setWhose(mut self, nwhose: String){
+    pub fn setWhose(&mut self, nwhose: String){
         self.whose = nwhose;
     }
 
@@ -135,12 +135,12 @@ impl FileUploader{
         return self.fileId.clone();
     }
 
-    pub fn setFileID(mut self, nfileID: i32){
+    pub fn setFileID(&mut self, nfileID: i32){
         self.fileId = nfileID;
     }
 
 
-    pub fn getAllocateDeviceList(mut self, query: Query, nod: i32, noa: i32, whose: String) -> Vec<DeviceItem> {
+    pub fn getAllocateDeviceList(&mut self, query: Query, nod: i32, noa: i32, whose: String) -> Vec<DeviceItem> {
         //确认有在线设备
         let mut onlineDevice = query.queryOnlineDevice();
         if(onlineDevice.len() == 0){
@@ -176,11 +176,11 @@ impl FileUploader{
         //Java:ArrayList 类是一个可以动态修改的数组，与普通数组的区别就是它是没有固定大小的限制，我们可以添加或删除元素。
         let mut distanceId: Vec<i32> = Vec::new();
         //原本的java代码总是插入i到ArrayList的首部，这里采用反向的循环，总是插在vector的尾部，正确性有待验证?
-        let mut i_while: usize = onlineDeviceNum - 1;
+        let mut i: usize = onlineDeviceNum - 1;
         while i >= 0 {
             if ((distance[i] <= 7) && (onlineDevice[i].get_leftrs() > fragmentSize)){
                 // 差距够小 且 至少可以分配一个碎片
-                distanceId.push(i_while as i32);
+                distanceId.push(i.clone() as i32);
                 i = i - 1;
             }
         }
@@ -199,7 +199,7 @@ impl FileUploader{
         }
         // 根据碎片数量和有效在线主机数，确定结果
         let deviceItemList: Vec<DeviceItem> = Vec::new();//原本初始化大小应为nod+noa
-        if(self.noa + self.nod < (size as i32)) {
+        if(self.noa + self.nod <= (size as i32)) {
             for i in 0..self.nod + self.noa{
                 deviceItemList[i] = onlineDevice[distanceId.get(i)];
                 deviceItemList[i].set_leftrs(deviceItemList[i].get_leftrs() - fragmentSize);
@@ -222,7 +222,7 @@ impl FileUploader{
         return deviceItemList;
     }
 
-    pub fn uploadRegister(mut self) -> String{
+    pub fn uploadRegister(&mut self) -> String{
         println!("uploadRegister is called");
 
 
@@ -235,20 +235,20 @@ impl FileUploader{
         //源代码部分都返回success，有点迷惑
         if online_device.len() == 0 {
             println!("1");
-            let result = String::from("NotEnoughFragments");
+            self.result = String::from("NotEnoughFragments");
             let return_val = String::from("success");
             return return_val;
         }
 
         //nod:Number of division  noa:Number of append
-        //没想到这么表示fileItem == null
+        //没想到这么表示fileItem != null
         if file_item.get_noa() < 1 {
-            let result = String::from("DuplicateFileName");
+            self.result = String::from("DuplicateFileName");
             return_val = String::from("success");
             return return_val;
         }
         else{
-            let mut newFile = FileItem::init2(self.fileName, self.path, "rwxrwxrwx", "", self.nod, self.noa, false, self.fileType, self.fileSize, self.whose);
+            let mut newFile = FileItem::init2(self.fileName,clone(), self.path.clone(), "rwxrwxrwx", "", self.nod.clone(), self.noa.clone(), false, self.fileType.clone(), self.fileSize.clone(), self.whose.clone());
             self.fileId = query.addFile(newFile);
             if self.fileId < 0{
                 //TODO
@@ -257,46 +257,41 @@ impl FileUploader{
             let mut str = String::new();
             //Java中的JSONArray:由JSONObject组成的数组
             let mut jsonArray:Vec<Value> = Vec::new();
-            let mut fileUploader = FileUploader::new();
+            //let mut fileUploader = FileUploader::new();
             //下面提示出现了所有权问题,故加了clone
-            let mut deviceItemList:Vec<DeviceItem> = fileUploader.getAllocateDeviceList(query, self.nod.clone(), self.noa.clone(), self.whose.clone());
-            if deviceItemList.len() < 0{
-                let mut result = String::from("NotEnoughDevices");
+            let mut deviceItemList:Vec<DeviceItem> = self.getAllocateDeviceList(query, self.nod.clone(), self.noa.clone(), self.whose.clone());
+            if deviceItemList[0].get_Ip()==""{
+                self.result = String::from("NotEnoughDevices");
                 let mut return_val = String::from("success");
                 return return_val;
             }
             for i in 0..self.noa + self.nod {
                 let mut formDetailsJson = json!({
                     "filename": (self.fileId * 100 + i).to_string(),
-                    "fragmentID": i,
+                    "fragmentID": i.clone(),
                     "ip": deviceItemList[i].get_Ip(),
                     "port": deviceItemList[i].get_Port(),
                 });
                 jsonArray.push(formDetailsJson);
                 query.addFragment(self.fileId * 100 + i, deviceItemList[i].get_Id().to_string());
             }
-            if jsonArray.len() < (self.noa + self.nod) as usize {//??
-                let mut result = String::from("NotEnoughDevices");
+            if jsonArray.len() < (self.noa + self.nod){//??
+                self.result = String::from("NotEnoughDevices");
                 let mut return_val = String::from("success");
                 return return_val;
             }
             else{
-                self.devices = serde_json::from_str("");
+                //self.devices = serde_json::from_str("");
                 self.devices = json!({
                     "forms": jsonArray,
                 });
                 println!("{}", self.devices.to_string());
 
-                let mut result = String::from("OK");
+                self.result = String::from("OK");
                 let mut return_val = String::from("success");
                 return return_val;
             }
         }
-
-        //删除
-        let mut temp = String::from("pqz");
-        return temp;
-
     }
 
 

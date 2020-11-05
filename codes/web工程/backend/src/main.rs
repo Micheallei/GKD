@@ -2,6 +2,7 @@
 extern crate mysql;
 
 use serde::{Deserialize, Serialize};
+use serde_json::{Result, Value, json};
 use actix_web::{
     get,post,http::header,middleware, web, App, HttpRequest, HttpResponse, HttpServer, Responder, Result,
 };
@@ -24,7 +25,7 @@ use userManagement::UserReg::UserReg;
 use userManagement::UserLogin::UserLogin;
 use userManagement::FileDownloader::FileDownloader;
 use userManagement::GetFileList::GetFileList;
-
+use userManagement::FileUploader::FileUploader;
 
 
 #[derive(Serialize, Deserialize)]//用户名和密码，注册登录时用到
@@ -39,9 +40,59 @@ pub struct FileDownloader_param {
     name: String,
 }
 
-#[derive(Serialize, Deserialize)]//添加下载请求时的数据格式
+#[derive(Serialize, Deserialize)]//获得文件目录时的数据格式
 pub struct GetFileList_param {
+    whose:String,
     QueryPath: String,
+}
+
+
+#[derive(Serialize, Deserialize)]//删除文件数据格式
+pub struct FileDelete_param {
+    namelist:Vec<String>,
+    pathlist: Vec<String>,
+    whose:String,
+}
+
+
+#[derive(Serialize, Deserialize)]//文件重命名时的数据格式
+pub struct FileRename_param {
+    Filename：String,
+    Filepath: String,
+    newname:String,
+    whose:String,
+}
+
+#[derive(Serialize, Deserialize)]//创建新文件夹时的数据格式
+pub struct FileRename_param {
+    Filename：String,
+    path: String,
+    whose:String,
+}
+
+#[derive(Serialize, Deserialize)]//上传文件时的接收数据格式
+pub struct Fileuploader_param{
+    //serialVersionUID: i32,
+    path: String,
+    fileName: String,
+    //result: String,
+    //devices: Value,
+    fileType: String,
+    nod: i32,
+    noa: i32,
+    fileSize: i32,   
+    whose: String,
+    //fileId: i32,
+    //fragmentFolderPath:PathBuf,
+    //fileFolderPath:PathBuf,
+}
+
+
+#[derive(Serialize, Deserialize)]//上传文件时的返回值数据格式
+pub struct Fileuploader_return {
+    result：String,
+    devices: Value,
+    fileId:i32,
 }
 
 
@@ -78,21 +129,19 @@ async fn login(params: web::Json<User>) -> web::Json<Return_string> {
 }
 
 #[post("/DownloadReg")]
-async fn downloadreg(params: web::Json<FileDownloader_param>) -> web::Json<Return_string> {
+async fn downloadreg(params: web::Json<FileDownloader_param>) -> web::Json<FileDownloader> {
     println!("hhh");
     println!("path: {0} ,name:{1}",params.path,params.name);
-    let result:String = FileDownloader::downloadRegister(params.path.clone(),params.name.clone());
-    println!("{}", result);
-    web::Json(Return_string {
-        result,
-    })
+    
+    //println!("{}", result);
+    web::Json(FileDownloader::downloadRegister(params.path.clone(),params.name.clone());)
 }
 
 
 #[post("/GetFileList")]
 async fn getfilelist(params: web::Json<GetFileList_param>) -> web::Json<Return_string> {
-    println!("Querypath: {0} ",params.QueryPath);
-    let result:String = GetFileList::execute(params.QueryPath.clone());
+    println!("whose:{0}, Querypath: {1} ",params.whose,params.QueryPath);
+    let result:String = GetFileList::execute(params.whose.clone(),params.QueryPath.clone());
     //println!("{}", result);
     web::Json(Return_string {
         result,//返回的是html代码的字符串
@@ -116,6 +165,67 @@ async fn decodefile(params: web::Json<FileDownloader_param>) -> web::Json<Return
     println!("{}", result);
     web::Json(Return_string {
         result,//"Error"或"OK"
+    })
+}
+
+
+#[post("/FileDelete")]
+async fn filedelete(params: web::Json<FileDelete_param>) -> web::Json<Return_string> {
+    //println!("path: {0} ,name:{1}",params.path,params.name);
+    GetFileList::filedelete(params.namelist.clone(),params.pathlist.clone(),params.whose.clone());
+    let result:String = GetFileList::execute(params.whose.clone(),params.pathlist[0].clone());
+    println!("{}", result);
+    web::Json(Return_string {
+        result,//"Error"或"OK"
+    })
+}
+
+
+#[post("/FileRename")]
+async fn filerename(params: web::Json<FileRename_param>) -> web::Json<Return_string> {
+    //println!("path: {0} ,name:{1}",params.path,params.name);
+    GetFileList::filerename(params.Filename.clone(),params.Filepath.clone(),params.newname.clone(),params.whose.clone());
+    let result:String = GetFileList::execute(params.whose.clone(),params.Filepath.clone());
+    println!("{}", result);
+    web::Json(Return_string {
+        result,
+    })
+}
+
+#[post("/CreateDir")]
+async fn create_dir(params: web::Json<FileRename_param>) -> web::Json<Return_string> {
+    //println!("path: {0} ,name:{1}",params.path,params.name);
+    GetFileList::create_dir(params.Filename.clone(),params.path.clone(),params.whose.clone());
+    let result:String = GetFileList::execute(params.whose.clone(),params.path.clone());
+    println!("{}", result);
+    web::Json(Return_string {
+        result,
+    })
+}
+
+#[post("/uploadRegister")]
+async fn uploadregister(params: web::Json<Fileuploader_param>) -> web::Json<Fileuploader_return> {
+    //println!("hhh");
+    //println!("path: {0} ,name:{1}",params.path,params.name);
+    let mut fileuploader=FileUploader{
+        serialVersionUID: 1,
+        path: params.path.clone(),
+        fileName: params.fileName.clone(),
+        result: String::new(),
+        devices: serde_json::from_str(""),//?用空字符串来初始化
+        fileType: params.fileType.clone(),
+        fileSize: params.fileSize.clone(),
+        noa: params.noa.clone(),
+        nod: params.nod.clone(),
+        whose: params.whose.clone(),
+        fileId: 0,
+    };
+    //println!("{}", result);
+    fileuploader.uploadRegister();
+    web::Json(Fileuploader_return{
+        fileuploader.result.clone(),
+        fileuploader.devices.clone(),
+        fileuploader.fileId.clone(),
     })
 }
 
@@ -158,6 +268,10 @@ async fn main()  -> std::io::Result<()>{
             .service(getfilelist)
             .service(progresscheck)
             .service(decodefile)
+            .service(FileDelete)
+            .service(FileRename)
+            .service(CreateDir)
+            .service(uploadRegister)
     })
     .bind("127.0.0.1:8000")?
     .run()

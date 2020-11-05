@@ -1,9 +1,11 @@
 use super::super::database::Query::Query;
+use super::super::database::FileItem::FileItem;
 
 pub struct GetFileList {
     status: String,
     html: String,
     QueryPath: String,
+    whose:String,
     serialVersionUID: i64,
 }
 
@@ -18,6 +20,7 @@ impl GetFileList {
             status: String::new(),
             html: String::new(),
             QueryPath: String::new(),
+            whose:String::new(),
             serialVersionUID: 1,
         }
     }
@@ -46,12 +49,20 @@ impl GetFileList {
         self.html.clone()
     }
 
+    pub fn setWhose (&mut self, nwhose: String) {
+        self.whose = nwhose;
+    }
+
+    pub fn getWhose (&self) -> String {
+        self.whose.clone()
+    }
 
 
-    pub fn execute(Querypath1:String) -> String {
+
+    pub fn execute(whose:String,Querypath1:String) -> String {
         let query = Query::new();
         let tpath: Option<String> = Some(Querypath1);
-        let mut file_array = query.queryFile_Bypath(tpath);
+        let mut file_array = query.queryFileList(whose,tpath);
 
         let mut html:String = String::new();
         html = html + 
@@ -99,5 +110,38 @@ impl GetFileList {
         }
 
         html
+    }
+
+
+    pub fn filedelete(namelist:Vec<String>,pathlist:Vec<String>,whose:String){
+        let query = Query::new();
+        for i in 0..namelist.len(){
+            query.filedelete(namelist[i].clone(),pathlist[i].clone(),whose.clone());
+            //把数据库中对于数据项删除，参数为文件名、文件路径、whose
+        }
+    }
+
+    pub fn filerename(Filename:String,Filepath:String,newname:String,whose:String){
+        let query = Query::new();
+        //把数据库中对应文件项修改，参数为原文件名，文件路径，新名字，whose
+        query.filerename(Filename.clone(),Filepath.clone(),newname.clone()，whose.clone());
+    }
+
+
+    pub fn create_dir(Filename:String,Filepath:String,whose:String){
+        let query = Query::new();
+        //在数据库中加入新表项
+        query.addFile(FileItem::init_2(
+            Filename.clone(),
+            Filepath.clone(),
+            String::new(),//attribute
+            String::new(),//time
+            0,//nod
+            0,//noa
+            true,//is_folder
+            String::new(),//filetype
+            0,//file_size
+            whose.clone()
+        ));
     }
 }

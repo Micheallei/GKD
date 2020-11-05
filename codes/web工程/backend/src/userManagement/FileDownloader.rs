@@ -2,18 +2,27 @@ use std::path::PathBuf;
 use std::path::Path;
 use std::ffi::{OsStr, OsString};
 use std::fs::{self, File, DirEntry, remove_file};
+use serde_json::{Result, Value,json};
+use serde::{Deserialize, Serialize};
 
 use super::super::database::Query::Query;
 use super::super::com::Decoder::Decoder;
 use super::super::database::RequestItem::RequestItem;
 
+
+#[derive(Serialize, Deserialize)]
 pub struct FileDownloader{
     path: String,
     name: String,
     result: String,
+    devices:Value,
+    fileType:String,
+    fileSize:i64,
+    noa:i64,
+    nod:i64,//以上为返回值
     serialVersionUID: i64,
-    fragmentFolderPath1: PathBuf,
-    fileFolderPath1: PathBuf,
+    //fragmentFolderPath1: PathBuf,
+    //fileFolderPath1: PathBuf,
 }
 
 impl FileDownloader {
@@ -22,9 +31,14 @@ impl FileDownloader {
             path: String::new(),
             name: String::new(),
             result: String::new(),
+            devices:json!({}),
+            fileType:String::new(),
+            fileSize:0,
+            noa:0,
+            nod:0,
             serialVersionUID: 1,
-            fragmentFolderPath1:PathBuf::from("E:/Tomcat 9.0/webapps/DFS/CloudDriveServer/downloadFragment/"),
-            fileFolderPath1:PathBuf::from("E:/Tomcat 9.0/webapps/DFS/CloudDriveServer/tmpFile/"),
+            //fragmentFolderPath1:PathBuf::from("E:/Tomcat 9.0/webapps/DFS/CloudDriveServer/downloadFragment/"),
+            //fileFolderPath1:PathBuf::from("E:/Tomcat 9.0/webapps/DFS/CloudDriveServer/tmpFile/"),
         }
     }
 
@@ -52,6 +66,46 @@ impl FileDownloader {
         self.name = nname;
     }
 
+    pub fn getDevices(&self) -> Value {
+        self.devices.clone()
+    }
+
+    pub fn setDevices(&mut self, ndevices: Value) {
+        self.devices = ndevices;
+    }
+
+    pub fn getFileType(&self) -> String {
+        self.fileType.clone()
+    }
+
+    pub fn setFileType(&mut self, nfileType: String) {
+        self.fileType = nfileType;
+    }
+
+    pub fn getFileSize(&self) -> i64 {
+        self.fileSize.clone()
+    }
+
+    pub fn setFileSize(&mut self, nfileSize: i64) {
+        self.fileSize = nfileSize;
+    }
+
+    pub fn getNoa(&self) -> i64 {
+        self.noa.clone()
+    }
+
+    pub fn setNoa(&mut self, nnoa: i64) {
+        self.noa = nnoa;
+    }
+
+    pub fn getNod(&self) -> i64 {
+        self.nod.clone()
+    }
+
+    pub fn setNod(&mut self, nnod: i64) {
+        self.nod = nnod;
+    }
+
     pub fn downloadRegister(path1:String, name1:String) -> String {
         //return -1 if error
 		//return 0 if can not collect enough fragments
@@ -65,25 +119,33 @@ impl FileDownloader {
         let file_item = query.queryFile_Bypathname(qpath, qname);
         let mut online_device = query.queryOnlineDevice();
 
+        let mut filedownloader=FileDownloader::new();//要返回到main中的数据
+
         if online_device.len() == 0 {
             let result = String::from("NotEnoughFragments");
             //return_val = String::form("success");
             //return return_val;
-            return result;
+            filedownloader.setResult(result);
+            return filedownloader;
         }
 
-        if file_item.get_noa() < 1 {
+        if (file_item.len() ==0 || file_item.get_nod() < 1) {
+            query.closeConnection();
             let result = String::from("Error");
             //return_val = String::form("success");
             //return return_val;
-            return result;
+            filedownloader.setResult(result);
+            return filedownloader;
         }
         else {
+            let nod = file_item.get_nod();
             let noa = file_item.get_noa();
             let id = file_item.get_id();
+            //let mut deviceID=0;
             //let mut str = String::new();
-            let mut request_items: Vec<RequestItem> = Vec::new();
-            for i in 0..noa {
+            let mut request_items: Vec<AnotherRequestItem> = Vec::new();
+            let mut jsonArray:Vec<Value> = Vec::new();
+            for i in 0..(noa+nod) {
                 let str = query.queryFragment(id * 100 + i);
                 if str == "" || str == "-1" {
                     continue;
@@ -91,26 +153,52 @@ impl FileDownloader {
                 let device_id: i32 = str.parse().unwrap();
                 for j in 0..online_device.len() {
                     if online_device[j].get_id() == device_id {
-                        request_items.push(RequestItem::init_2(1, id*100 + i, device_id));//pqz,1改为i
+                        let curDevice=query.queryDevice(deviceID);
+                        //request_items.push(RequestItem::init_2(1, id*100 + i, device_id));//pqz,1改为i
+                        let formDetailsJson = json!({
+                            "filename": (id*100 + i).to_string(),
+                            "fragmentId": i.clone(),
+                            "ip":curDevice.getIp(),
+                            "port":curDevice.getPort().to_string()
+                        });
+                        jsonArray.push(formDetailsJson);
                         break;
                     }
                 }
             }
+            /*
             let temp = (noa / 2) as usize;
             if request_items.len() < temp {
                 let result = String::from("NotEnoughFragments");
                 //return_val = String::form("success");
                 //return return_val;
                 return result;
+            }*/
+            if jsonArray.len()<nod {
+                query.closeConnection();
+                let result = String::from("NotEnoughFragments");
+                filedownloader.setResult(result);
+                return filedownloader;
             }
             else {
+                /*
                 for i in 0..temp {
                     query.addRequest(request_items[i].clone());
-                }
+                }*/
+                filedownloader.devices=json!{(
+                    "forms":jsonArray
+                )};
+                filedownloader.setFileSize(file_item.get_file_size());
+                filedownloader.setFileType(file_item.get_file_type());
+                filedownloader.setNod(file_item.get_nod());
+                filedownloader.setNoa(file_item.get_noa());
+
+                query.closeConnection();
                 let result = String::from("OK");
+                filedownloader.setResult(result);
                 //return_val = String::form("success");
                 //return return_val;
-                return result;
+                return filedownloader;
             }
         }
     }
