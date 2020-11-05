@@ -205,7 +205,7 @@
     4. 客户端收到 Token 以后可以把它存储起来，比如放在 Cookie 里或者 Local Storage 里
     5. 客户端每次向服务端请求资源的时候需要带着服务端签发的 Token
     6. 服务端收到请求，然后去验证客户端请求里面带着的 Token，如果验证成功，就向客户端返回请求的数据
-    
+  
 * JWT标准实现Token：见pdf
   
 * 非对称加密：公钥和私钥
@@ -405,23 +405,23 @@
         * 对每个设备节点，调用WebSocketDownload函数实现碎片下载
       * 收集到一个文件所有碎片值后，调用decodeFile函数解码
       
-    * 文件上传：未实现一次上传多个文件
-      
-        * 点击按钮，调用fileUpload函数取到用户上传的文件(在jsp文件里通过<input>项实现上传)
+      * 文件上传：未实现一次上传多个文件
         
-        * 调用encodeFile函数，在其内调用uploader函数-》调用Go的callEncoder函数来编码，并返回给Js一个文件碎片的数组content
-        
-          对content调用objectHash.MD5编码，值存到digest
-        
-        * 再调用encodeCallBack函数，以表单uploadForm向server端传递文件信息，server端则存储相关信息，并向js端返回分配的存储节点信息
-        
-        * 循环调用WebSocketUpload把文件碎片分发到各个节点
-        
+          * 点击按钮，调用fileUpload函数取到用户上传的文件(在jsp文件里通过<input>项实现上传)
+          
+          * 调用encodeFile函数，在其内调用uploader函数-》调用Go的callEncoder函数来编码，并返回给Js一个文件碎片的数组content
+          
+            对content调用objectHash.MD5编码，值存到digest
+          
+          * 再调用encodeCallBack函数，以表单uploadForm向server端传递文件信息，server端则存储相关信息，并向js端返回分配的存储节点信息
+          
+          * 循环调用WebSocketUpload把文件碎片分发到各个节点
+          
       * 动态刷新文件目录：(包括下一级或上一级)
         
         * 会通过cookie得到username并赋值给Whose项，传回server端，返回该用户的新一级文件目录
       * 定时刷新预下载进度
-        
+      
         * 现在就不需要再与server端交互了，直接js里查询收到的digest数组里有效的个数。不过似乎并没放到具体实现中？没找到"#download_progress_area"节点
     
   * ec文件夹下
@@ -441,7 +441,7 @@
   
   
 
-#### JS
+### JS
 
 * Cookie
   * 每个载入浏览器的 HTML 文档都会成为 Document 对象。
@@ -512,7 +512,7 @@
 
 * onload 事件会在页面或图像加载完成后立即发生。(如onload="f(x)"则会执行该函数)
 
-#### Go语言
+### Go语言
 
 * Go 语言被设计成一门应用于搭载 Web 服务器，存储集群或类似用途的巨型中央服务器的系统编程语言。
 
@@ -598,7 +598,7 @@
     SET GOOS=js    
     go build -o main.wasm
 
-#### Docker安装
+### Docker安装
 
 * docker是运行在linux上的容器技术。
   - win10安装docker 步骤：第一步 启用win10自带的虚拟化技术Hyper-V，第二步是安装docker，第三步是自定义docker 虚拟机 数据存放路径。
@@ -609,3 +609,288 @@
 
 
 
+## 10.25 
+
+#### 后端java代码
+
+* database/AnotherRequestItem.java：定义了一个类以及一些get，set方法
+
+  ```java
+  		this.ip=ip;
+  		this.port=port;
+  		this.filename=filename;
+  		this.fragmentId=fragmentId;
+  		this.fileType=fileType;
+  ```
+
+* userManagement/FileUploader.java
+
+  * 函数getAllocateDeviceList()
+
+    * query.queryOnlineDevice();返回在线设备:DeviceItem[]存储
+
+    * 计算相似度：
+
+      query.queryUserTime(whose);
+
+      onlineDevice[i].getTime();
+
+      看24维向量重合度有多高？算法（155行for 循环，但返回值还需看看）
+
+    * 差距足够小，且getLeftrs（）>fragmentSize,即至少可以分配一个碎片，则将该id加入distanceId
+
+    * 根据碎片数量和有效在线主机数，确定结果
+
+    * 有效在线主机数大于等于文件碎片数量：每个主机分一块
+
+    * 小于：循环平均分配碎片
+
+    * 不过没有做总剩余空间不够时的处理
+
+  * 函数uploadRegister()
+
+    * 由前端majorPage_ajax.js的encodeCallBack函数发送请求时调用此函数，可查看ajax返回后的属性使用情况来看出用了哪些返回值
+
+  * 函数progressCheck(),但感觉没用上
+
+  * 函数decodeFile()，但感觉没用上
+
+  * 重申ajax返回值：在java里，因为有Tomcat的存在，利用`extends ActionSupport`可以直接把该类的示例传回前端js代码里，`var obj = $.parseJSON(databack);`而且obj对象的属性即是java类里实现了get和set方法的所有属性
+
+    但若用rust返回，则需考虑直接返回数据，那么需要在web后端/mian.rs里考虑构造该结构体(还得考虑能否`\#[derive(Serialize, Deserialize)]`),即能否Json序列化
+
+#### 文件系统功能实现
+
+* 文件夹创建
+
+  * 前端：按钮、响应动作(在当前的文件目录层级)
+
+    点击创建：在当前层级下创建文件夹：弹出表单输入文件名，然后ajax传给server在数据库记录，然后就动态刷新当前目录。
+
+    框架代码：https://blog.csdn.net/diyinqian/article/details/83691464
+
+  * 后端：main函数里接收，然后调用数据库函数来往数据库加东西。最后调用GetFileList函数返回字符串
+
+  * 问题：
+
+    * 传的时候当前目录层级怎么清楚？
+    * 多用户各自文件对应文件夹管理？
+    * 管理上还是对每个文件/文件夹用FILE表，不过里面有whose和path项，每次动态刷新只需要同时对这两项筛选即可
+
+* 文件/文件夹删除
+
+  * 对打勾选中的文件、文件夹，删除操作：即把对应的数据库里的表项删掉。
+
+* 文件/文件夹重命名
+
+  * 点按钮，找到打勾选中的文件/文件夹，类似创建那样弹出表单输入新名字，然后ajax传给server在数据库记录，然后就动态刷新当前目录。
+
+
+
+## 11.3
+
+#### 前后端改动记录
+
+##### GKD中前端
+
+* index.html, majorPage.jsp基本照搬llw组
+
+* index_ajax.js不变
+
+* majorPage_ajax.js
+
+  * fileDownload()：从后端要返回的信息变多了，格式包括string,int,JSONObject
+  
+  包括：  
+  
+    ```
+    **private** **String** path;
+    
+      **private** **String** name;
+    
+      //用来返回结果给前端
+    
+      private** **String** result;
+    
+      **private** **JSONObject** devices;
+    
+      **private** **String** fileType;
+    
+      **private** **int** fileSize;
+    
+      **private** **int** noa;
+    
+      **private** **int** nod;
+    
+    
+    ```
+  
+    
+  
+  * encodeCallBack()函数里还有一组ajax，从后端返回的信息参见llw组后端返回代码
+  
+  * filedelete():对选中的文件一次性删除；注意ajax传到后端的数据是两个数组(包含字符串)以及一个whose的cookie
+  
+  * filerename():对选中的第一个文件重命名，并将旧名、路径、whose、新名传回后端
+
+##### 后端改写
+
+* FileDownloader.rs: 
+
+  downloadRegister()函数：
+
+  * llw代码60-68
+
+  * devices变量：JSONObject
+
+    `JSONArray jsonArray = new JSONArray();`里放多个JSONObject数据
+
+    最后再`devices.put("forms", jsonArray);`
+
+  * 考虑直接用FileDownloader结构体的一个实例作为返回值
+
+  progressCheck()和decodeFile()函数还没改，因为目前用不上，这些操作移到前端了。
+
+* FileUploader.rs：pqz写的，用的是结构体方法的形式，与我写的直接用关联函数还是有一定区别，调试时需注意
+
+* 在GetFileList下新增了filedelete，filerename，create_dir三个函数，用于对应前端三种功能的实现
+* main.rs里对应接收函数都做了补充，包括数据类型
+* 但感觉对一些错误处理或是NULL的处理不是很合理，考虑后续做一定优化，如Result，Option等
+
+
+
+
+
+
+
+##### Serde_json包
+
+* A string of JSON data can be parsed into a `serde_json::Value` by the [`serde_json::from_str`](https://docs.serde.rs/serde_json/de/fn.from_str.html) function
+
+  ```rust
+  let data = r#"
+          {
+              "name": "John Doe",
+              "age": 43,
+              "phones": [
+                  "+44 1234567",
+                  "+44 2345678"
+              ]
+          }"#;
+  
+      // Parse the string of data into serde_json::Value.
+      let v: Value = serde_json::from_str(data)?;
+  
+      // Access parts of the data by indexing with square brackets.
+      println!("Please call {} at the number {}", v["name"], v["phones"][0]);
+  
+  ```
+
+  * v["name"]等都是借用，为&Value，打印时会带引号，去掉引号需加上.as_str(); 错误时返回Value:Null
+
+* Serde provides a powerful way of mapping JSON data into Rust data structures largely automatically.
+
+  ```rust
+  use serde::{Deserialize, Serialize};
+  use serde_json::Result;
+  
+  #[derive(Serialize, Deserialize)]
+  struct Person {
+      name: String,
+      age: u8,
+      phones: Vec<String>,
+  }
+  
+  fn typed_example() -> Result<()> {
+      // Some JSON input data as a &str. Maybe this comes from the user.
+      let data = r#"
+          {
+              "name": "John Doe",
+              "age": 43,
+              "phones": [
+                  "+44 1234567",
+                  "+44 2345678"
+              ]
+          }"#;
+  
+      // Parse the string of data into a Person object. This is exactly the
+      // same function as the one that produced serde_json::Value above, but
+      // now we are asking it for a Person as output.
+      let p: Person = serde_json::from_str(data)?;
+  
+      // Do things just like with any other Rust data structure.
+      println!("Please call {} at the number {}", p.name, p.phones[0]);
+  
+      Ok(())
+  }
+  ```
+
+  * 所有实现了#[derive(Serialize, Deserialize)]的rust类型都可以直接由    let p: Person = serde_json::from_str(data)?;来赋值
+
+* Constructing Json Values
+
+  ```rust
+  use serde_json::json;
+  
+  fn main() {
+      // The type of `john` is `serde_json::Value`
+      let john = json!({
+          "name": "John Doe",
+          "age": 43,
+          "phones": [
+              "+44 1234567",
+              "+44 2345678"
+          ]
+      });
+  
+      println!("first phone number: {}", john["phones"][0]);
+  
+      // Convert to a string of JSON and print it out
+      println!("{}", john.to_string());
+  }
+  ```
+
+  ```rust
+  let full_name = "John Doe";
+  let age_last_year = 42;
+  
+  // The type of `john` is `serde_json::Value`
+  let john = json!({
+      "name": full_name,
+      "age": age_last_year + 1,
+      "phones": [
+          format!("+44 {}", random_phone())
+      ]
+  });
+  ```
+
+* A data structure can be converted to a JSON string by [`serde_json::to_string`](https://docs.serde.rs/serde_json/ser/fn.to_string.html). There is also [`serde_json::to_vec`](https://docs.serde.rs/serde_json/ser/fn.to_vec.html) which serializes to a `Vec<u8>` and [`serde_json::to_writer`](https://docs.serde.rs/serde_json/ser/fn.to_writer.html) which serializes to any `io::Write` such as a File or a TCP stream.
+
+  ```rust
+  use serde::{Deserialize, Serialize};
+  use serde_json::Result;
+  
+  #[derive(Serialize, Deserialize)]
+  struct Address {
+      street: String,
+      city: String,
+  }
+  
+  fn print_an_address() -> Result<()> {
+      // Some data structure.
+      let address = Address {
+          street: "10 Downing Street".to_owned(),
+          city: "London".to_owned(),
+      };
+  
+      // Serialize it to a JSON string.
+      let j = serde_json::to_string(&address)?;
+  
+      // Print, write to a file, or send to an HTTP server.
+      println!("{}", j);
+  
+      Ok(())
+  }
+  ```
+
+  
