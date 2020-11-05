@@ -1,6 +1,5 @@
 use std::thread;
-use log::{info,warn,debug,error,trace};
-use log4rs;
+use super::database::Query::DeviceItem;
 
 pub struct DFS_server {
     connecting: bool,
@@ -9,13 +8,13 @@ pub struct DFS_server {
 impl DFS_server {
     pub fn main (args: String) {
         println!("Server start");
-        let query = Query::new();
-        let devices:Vec<DeviceItem> = query.queryOnlineDevice();
+        let query = super::database::Query::Query::new();
+        let mut devices:Vec<DeviceItem> = query.queryOnlineDevice();
         if !devices.is_empty() {
-            info!("There are {} devices on line",devices.len());
             for device in &mut devices {
-                device.set_is_online(false);
-                query.alterDevice(device);
+                let dvc: DeviceItem = DeviceItem::init(device.get_id(), device.get_ip(), device.get_port(),
+                                                        false, device.get_rs());
+                query.alterDevice(dvc);
             }
         }
         let con_port:String = String::from("127.0.0.1:6666");   //设置controlPort
@@ -31,7 +30,7 @@ impl DFS_server {
             data_t.run();
         });
         */
-        while true {
+        loop {
 
         }
         println!("DFS_server end");

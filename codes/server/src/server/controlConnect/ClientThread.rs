@@ -1,5 +1,4 @@
-use std::net::{TcpListener, TcpStream};
-use std::thread;
+use std::net::TcpStream;
 use std::io::BufReader;
 use std::io::BufRead;
 use std::io::prelude::*;
@@ -45,7 +44,7 @@ impl ClientThread{
                     //println!("controlconnect--queryDevice所用的id：{}",id);
                     let query = Query::new();
                     let mut deviceitem = query.queryDevice(id);
-                    if(deviceitem.id == -1) {
+                    if deviceitem.get_id() == -1 {
                         println!("No such device ID!");
                         return 0;
                     }
@@ -92,12 +91,12 @@ impl ClientThread{
                         return 0
                     }
 
-                    let ip:String = s[2];
+                    let ip:String = s[2].to_string();
                     let port:i32 = s[3].trim().parse().unwrap();
 
                     let query = Query::new();
                     let mut deviceitem = query.queryDevice(id);
-                    if deviceitem.id == -1 {
+                    if deviceitem.get_id() == -1 {
                         // 不允许通过报文新建client
                         println!("No such device ID!");
                         return 0;

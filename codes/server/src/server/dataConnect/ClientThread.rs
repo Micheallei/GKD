@@ -6,7 +6,6 @@ use chrono::Local;
 use rand::Rng;
 use std::path::PathBuf;
 use std::fs::File;
-use std::path::Path;
 use std::time::Duration;
 
 use super::super::database::Query::Query;
@@ -154,7 +153,7 @@ impl ClientThread{
             } else {
                 let mut f2 = File::create(&s).unwrap();
                 let mut socket2 = self.client_socket.try_clone().expect("clone failed");
-                if(super::FileTransporter::recv_file(f2, &socket2)) {
+                if super::FileTransporter::recv_file(f2, &socket2) {
                     socket2.write(b"received!\n");
                     socket2.flush();
                     query.deleteRequest(request.get_id());
@@ -220,7 +219,7 @@ impl ClientThread{
                         println!("!!send error");
                         let mut f2 = File::open(&s).unwrap();
                         let socket2 = self.client_socket.try_clone().expect("clone failed");
-                        if(super::FileTransporter::send_file(f2, &socket2)) {
+                        if super::FileTransporter::send_file(f2, &socket2) {
                             let mut in_from_cilent = BufReader::new(socket2);
                             let mut sentence = String::new();
                             in_from_cilent.read_line(&mut sentence).unwrap();
@@ -364,7 +363,7 @@ impl ClientThread{
                 println!("!!recv file failed");
                 let recv_file2 = File::create(&s).unwrap();
                 let mut socket2 = self.client_socket.try_clone().expect("clone failed");
-                if(super::FileTransporter::recv_file(recv_file2, &socket2)) {
+                if super::FileTransporter::recv_file(recv_file2, &socket2) {
                     query.addFragment(temp, "-1".to_string());
                     if fragment_num == fragment_count - 1 {
                         let count = query.queryFragmentNumbers(file_id);

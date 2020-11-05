@@ -10,7 +10,7 @@ struct UserItem {
     name: Option<String>,
     passwd: Option<String>,
     uris: Option<String>,
-    time: Option<String>,
+    time: i32,
 }
 
 struct FragmentItem {
@@ -72,8 +72,12 @@ impl Query {
                     path: "".to_string(),
                     attribute: "".to_string(),
                     time: "".to_string(),
+                    nod: 0,
                     noa: 0,
                     is_folder: false,
+                    file_type: "".to_string(),
+                    file_size: 0,
+                    whose: "".to_string(),
                 }
             }
             Ok(selected_files) => {
@@ -84,8 +88,12 @@ impl Query {
                         path: "".to_string(),
                         attribute: "".to_string(),
                         time: "".to_string(),
+                        nod: 0,
                         noa: 0,
                         is_folder: false,
+                        file_type: "".to_string(),
+                        file_size: 0,
+                        whose: "".to_string(),
                     }
                 }
                 return FileItem {
@@ -94,8 +102,12 @@ impl Query {
                     path: selected_files[0].path.clone(),
                     attribute: selected_files[0].attribute.clone(),
                     time: selected_files[0].time.clone(),
+                    nod: selected_files[0].nod,
                     noa: selected_files[0].noa,
                     is_folder: selected_files[0].is_folder,
+                    file_type: selected_files[0].file_type.clone(),
+                    file_size: selected_files[0].file_size,
+                    whose: selected_files[0].whose.clone(),
                 }
             }
         }
@@ -121,8 +133,8 @@ impl Query {
             Err(e) => {
                 return -1;
             }
-            Ok(selected_files) => {
-                if selected_files.len() == 0 {
+            Ok(selected_users) => {
+                if selected_users.len() == 0 {
                     return 0;
                 }
                 return selected_users[0].time;
@@ -205,8 +217,8 @@ impl Query {
             Err(e) => {
                 return "".to_string();
             }
-            Ok(selected_files) => {
-                if selected_files.len() == 0 {
+            Ok(selected_fragments) => {
+                if selected_fragments.len() == 0 {
                     return "".to_string();
                 }
                 return selected_fragments[0].path;
@@ -728,7 +740,7 @@ impl Query{
         }
         suc = 1;
         return suc;
-    }*/
+    }
 
     pub fn alterDevice(&self, mut device:DeviceItem) -> i32{
         //println!("enter alterDevice");//note:by lyf

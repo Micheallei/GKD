@@ -14,7 +14,8 @@ pub struct FileItem {
 
 impl FileItem {
     fn init(id: i32, name: String, path: String, attribute: String,
-        time: String, noa: i32, is_folder: bool) -> Self {
+        time: String, nod: i32, noa: i32, is_folder: bool, file_type: String,
+        file_size: i32, whose: String) -> Self {
             FileItem {
                 id,
                 name,
@@ -31,7 +32,8 @@ impl FileItem {
         }
 
     pub fn init_2(name: String, path: String, attribute: String,
-        time: String, noa: i32, is_folder: bool) -> Self {
+        time: String, noa: i32, nod: i32, is_folder: bool, file_type: String,
+        file_size: i32, whose: String) -> Self {
             FileItem {
                 id: 0,
                 name,
@@ -132,7 +134,7 @@ impl FileItem {
         string
     }
 
-    pub fn get_file_size(&mut self) {
+    pub fn get_file_size(&mut self) -> i32 {
         self.file_size
     }
 
