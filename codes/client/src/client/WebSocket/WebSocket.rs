@@ -4,7 +4,10 @@ use std::thread;
 use std::sync::mpsc::channel;
 use std::io::stdin;
 use std::path::PathBuf;
+use std::fs;
 use std::fs::File;
+use std::io;
+use std::io::prelude::*;
 
 use websocket::{Message, OwnedMessage};
 use websocket::client::ClientBuilder;
@@ -44,32 +47,59 @@ impl WebSocket{
         }   
     }
 
-    pub fn sendFile(&self,f_path:&PathBuf) {
+    pub fn sendFile(&self, f_path:&PathBuf) {
         let mut f:File = File::open(&f_path.as_path()).unwrap();
-        self.sendBin()
+        let mut contents = Vec::new();
+        f.read_to_end(&mut contents);
+        let message = OwnedMessage::Binary(contents);
+        self.client.send_message(&message).unwrap();
     }
 
-    pub recv() -> Vec<Vec<u8>> {
+    pub fn sendMessage(&self, msg: String) {
+        let message = OwnedMessage::Text(msg);
+		self.client.send_message(&message).unwrap();
+    }
+
+    pub fn echo(&self) -> OwnedMessage{
+        let message: OwnedMessage = self.recv();
+        println!("Receive Loop: {:?}", message);
+        self.client.send_message(&message).unwrap();
+        return message;
+    }
+
+    pub fn recvFile(&self, f_path:&PathBuf) {
+        //let mut f:File = File::open(&f_path.as_path()).unwrap();
+        let message: OwnedMessage = self.recv();
+        match message{
+            OwnedMessage::Binary(contents) => {
+                fs::write(f_path.as_path(), contents);
+            }
+            _ => println!("no binary for file\n"),
+        }
+    }
+
+    pub fn recv(&self) -> OwnedMessage {
         let receive_loop = thread::spawn(move || {
             // Receive loop
+            let (mut receiver, mut sender) = self.client.split().unwrap();
+            let (tx, rx) = channel();
             for message in receiver.incoming_messages() {
                 let message = match message {
                     Ok(m) => m,
                     Err(e) => {
                         println!("Receive Loop: {:?}", e);
-                        let _ = tx_1.send(OwnedMessage::Close(None));
+                        let _ = tx.send(OwnedMessage::Close(None));
                         return;
                     }
                 };
                 match message {
                     OwnedMessage::Close(_) => {
                         // Got a close message, so send a close message and return
-                        println!("closed!");
-                        let _ = tx_1.send(OwnedMessage::Close(None));
+                        let _ = tx.send(OwnedMessage::Close(None));
                         return;
                     }
                     OwnedMessage::Ping(data) => {
-                        match tx_1.send(OwnedMessage::Pong(data)) {
+                        match tx.send(OwnedMessage::Pong(data)) {
                             // Send a pong in response
                             Ok(()) => (),
                             Err(e) => {
@@ -84,4 +114,5 @@ impl WebSocket{
             }
         });
     }
+
 }
