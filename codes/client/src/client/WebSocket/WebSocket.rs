@@ -30,7 +30,7 @@ impl WebSocket{
     // }
 
     pub fn new(server: &websocket::server::WsServer<websocket::server::NoTlsAcceptor, std::net::TcpListener>) -> WebSocket{
-        let request = server.filter_map(Result::ok).next().unwrap();
+        let request = &server.filter_map(Result::ok).next().unwrap();
         // 此处filter_map()返回值是一个迭代器，使用next()方法获得其中一个元素
         thread::spawn(move || {
             if !request.protocols().contains(&"rust-websocket".to_string()) {
@@ -47,7 +47,7 @@ impl WebSocket{
         }   
     }
 
-    pub fn sendFile(&self, f_path:&PathBuf) {
+    pub fn sendFile(self, f_path:&PathBuf) {
         let mut f:File = File::open(&f_path.as_path()).unwrap();
         let mut contents = Vec::new();
         f.read_to_end(&mut contents);
@@ -55,7 +55,7 @@ impl WebSocket{
         self.client.send_message(&message).unwrap();
     }
 
-    pub fn sendMessage(&self, msg: String) {
+    pub fn sendMessage(self, msg: String) {
         let message = OwnedMessage::Text(msg);
 		self.client.send_message(&message).unwrap();
     }
@@ -79,7 +79,8 @@ impl WebSocket{
     }
 
     pub fn recv(&self) -> OwnedMessage {
-        let receive_loop = thread::spawn(move || {
+        let message_record: OwnedMessage = OwnedMessage::Close(None);
+        //let receive_loop = thread::spawn(move || {
             // Receive loop
             let (mut receiver, mut sender) = self.client.split().unwrap();
             let (tx, rx) = channel();
@@ -89,14 +90,15 @@ impl WebSocket{
                     Err(e) => {
                         println!("Receive Loop: {:?}", e);
                         let _ = tx.send(OwnedMessage::Close(None));
-                        return;
+                        return message_record;
                     }
                 };
+                let message_record = message;
                 match message {
                     OwnedMessage::Close(_) => {
                         // Got a close message, so send a close message and return
                         let _ = tx.send(OwnedMessage::Close(None));
-                        return;
+                        //return;
                     }
                     OwnedMessage::Ping(data) => {
                         match tx.send(OwnedMessage::Pong(data)) {
@@ -104,7 +106,7 @@ impl WebSocket{
                             Ok(()) => (),
                             Err(e) => {
                                 println!("Receive Loop: {:?}", e);
-                                return;
+                                //return;
                             }
                         }
                     }
@@ -112,7 +114,8 @@ impl WebSocket{
                     _ => println!("Receive Loop: {:?}", message),
                 }
             }
-        });
+        //});
+        return message_record;
     }
 
 }
