@@ -709,34 +709,69 @@ impl Query{
         return suc;
     }
 
+    pub fn deleteFile_Byname(&self, name: String, path: String, whose: String) -> i32{
+        let mut suc:i32 = -1;
+        for mut stmt in self.pool.prepare(r"DELETE FROM DFS.FILE WHERE name=:name AND path=:path AND whose=:whose").into_iter() {
+            stmt.execute(params!{
+                "name" => name,
+                "path" => path,
+                "whose" => whose
+            }).unwrap();
+            //此处未处理execute不成功时，返回-1的情况
+        }
+        suc = 1;
+        return suc;
+    }
+
     pub fn alterFile(&self, mut file:FileItem) -> i32{
         let mut suc:i32 = -1;
         if file.is_folder(){
             for mut stmt in self.pool.prepare(r"UPDATE DFS.FILE SET NAME=:name,PATH=:path,ATTRIBUTE=:attribute,
-            TIME=:time,NOA=:noa,ISFOLDER=true WHERE id=:id;").into_iter() {
+            TIME=:time,NOD=:nod,NOA=:noa,ISFOLDER=true,whose=:whose,filetype=:filetype,filesize=:filesize WHERE id=:id;").into_iter() {
                 stmt.execute(params!{
                     "name" => file.get_name(),
                     "path" => file.get_path(),
                     "attribute" => file.get_attribute(),
                     "time" => file.get_time(),
+                    "nod" => file.get_nod(),
                     "noa" => file.get_noa(),
-                    "id" => file.get_id()
+                    "whose" => file.get_whose(),
+                    "filetype" => file.get_file_type(),
+                    "filesize" => file.get_file_size()
                 }).unwrap().last_insert_id() as i32;
                 //此处未处理execute不成功时，返回-1的情况
             }
         } else {
             for mut stmt in self.pool.prepare(r"UPDATE DFS.FILE SET NAME=:name,PATH=:path,ATTRIBUTE=:attribute,
-            TIME=:time,NOA=:noa,ISFOLDER=false WHERE id=:id;").into_iter() {
+            TIME=:time,NOD=:nod,NOA=:noa,ISFOLDER=false,whose=:whose,filetype=:filetype,filesize=:filesize WHERE id=:id;").into_iter() {
                 stmt.execute(params!{
                     "name" => file.get_name(),
                     "path" => file.get_path(),
                     "attribute" => file.get_attribute(),
                     "time" => file.get_time(),
+                    "nod" => file.get_nod(),
                     "noa" => file.get_noa(),
-                    "id" => file.get_id()
+                    "whose" => file.get_whose(),
+                    "filetype" => file.get_file_type(),
+                    "filesize" => file.get_file_size()
                 }).unwrap().last_insert_id() as i32;
                 //此处未处理execute不成功时，返回-1的情况
             }
+        }
+        suc = 1;
+        return suc;
+    }
+
+    pub fn RenameFile(&self, Filename:String, Filepath:String, newname:String, whose:String) -> i32{
+        let mut suc:i32 = -1;
+        for mut stmt in self.pool.prepare(r"UPDATE DFS.FILE SET NAME=:newname WHERE name=:name AND path=:path AND whose=:whose;").into_iter() {
+            stmt.execute(params!{
+                "newname" => newname,
+                "name" => Filename,
+                "path" => Filepath,
+                "whose" => whose
+            }).unwrap().last_insert_id() as i32;
+            //此处未处理execute不成功时，返回-1的情况
         }
         suc = 1;
         return suc;
