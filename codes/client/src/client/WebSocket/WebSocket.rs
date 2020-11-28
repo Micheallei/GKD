@@ -30,12 +30,15 @@ impl WebSocket{
     // }
 
     pub fn new(server: &mut websocket::server::WsServer<websocket::server::NoTlsAcceptor, std::net::TcpListener>) -> WebSocket{
-        let request = &mut server.filter_map(Result::ok).next().unwrap();
+        let request = &mut server.filter_map(Result::ok); // 由于temporary value需要暂存，分为两行
+        let request = request.next().unwrap();
         // 此处filter_map()返回值是一个迭代器，使用next()方法获得其中一个元素
         //thread::spawn(move || {
             if !request.protocols().contains(&"rust-websocket".to_string()) {
                 request.reject().unwrap();
-                //return;
+                return WebSocket{
+                    client:None // ?
+                };
                 // TODO: 接到的连接不是websocket协议时，输出错误信息到log
             }
             //return;
@@ -116,6 +119,9 @@ impl WebSocket{
             }
         //});
         return message_record;
+    }
+    pub fn close(&self){
+
     }
 
 }

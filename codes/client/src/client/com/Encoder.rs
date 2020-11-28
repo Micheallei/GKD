@@ -55,7 +55,7 @@ impl Encoder{
         }
         inputFile.read_to_end(&mut allBytes);   //appended,故不需要指定off
 
-        if allBytes.len() != (fileSize + 4).try_into().unwrap() {
+        if allBytes.len() as i32 != (fileSize + 4) {
             panic!("not enough bytes read");
             //注：原程序为throw IOException
         }
