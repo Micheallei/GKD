@@ -28,7 +28,7 @@ impl RequestManager {
         //TODO:需要锁机制
         println!("WebSocket Server has started on {} :{}.\r\nWaiting for a connection...", self.self_ip, self.self_data_port);
         while(true) {
-            let user: WebSocket = WebSocket::new(&mut self.server);  //note by lyf:由于websocket解决move时使用了mut，故此处传可变引用
+            let user: WebSocket = WebSocket::new(&mut self.server).unwrap();  //note by lyf:由于websocket解决move时使用了mut，故此处传可变引用
             println!("A user connected.");
 
             //println!("{}", user);

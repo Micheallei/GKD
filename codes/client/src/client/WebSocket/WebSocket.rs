@@ -29,25 +29,24 @@ impl WebSocket{
     //     self.server = self.server.bind(addr).unwrap();
     // }
 
-    pub fn new(server: &mut websocket::server::WsServer<websocket::server::NoTlsAcceptor, std::net::TcpListener>) -> WebSocket{
+    pub fn new(server: &mut websocket::server::WsServer<websocket::server::NoTlsAcceptor, std::net::TcpListener>) -> Option<WebSocket> {
         let request = &mut server.filter_map(Result::ok); // 由于temporary value需要暂存，分为两行
         let request = request.next().unwrap();
         // 此处filter_map()返回值是一个迭代器，使用next()方法获得其中一个元素
         //thread::spawn(move || {
             if !request.protocols().contains(&"rust-websocket".to_string()) {
                 request.reject().unwrap();
-                return WebSocket{
-                    client:None // ?
-                };
+                return None;
                 // TODO: 接到的连接不是websocket协议时，输出错误信息到log
             }
             //return;
         //});
    
         let client = request.use_protocol("rust-websocket").accept().unwrap();
-        WebSocket{
+        let result:Option<WebSocket> = Some(WebSocket{
             client:client
-        }   
+        });
+        return result;
     }
 
     pub fn sendFile(&mut self, f_path:&PathBuf) {
@@ -81,19 +80,27 @@ impl WebSocket{
         }
     }
 
-    pub fn recv(&self) -> OwnedMessage {
+    pub fn recv(&mut self) -> OwnedMessage {
         let message_record: OwnedMessage = OwnedMessage::Close(None);
         //let receive_loop = thread::spawn(move || {
             // Receive loop
-            let (mut receiver, mut sender) = self.client.split().unwrap();
+            //let (mut receiver, mut sender) = self.client.split().unwrap();
             let (tx, rx) = channel();
-            for message in receiver.incoming_messages() {
+            while(true){
+            //for message in receiver.incoming_messages() {
+                let message = self.client.recv_message();
                 let message = match message {
                     Ok(m) => m,
                     Err(e) => {
-                        println!("Receive Loop: {:?}", e);
-                        let _ = tx.send(OwnedMessage::Close(None));
-                        return message_record;
+                        match e {
+                            NoDataAvailable => break, // 没有receive到消息时，break跳出while true
+                            _ => {
+                                println!("Receive Loop: {:?}", e);
+                                let _ = tx.send(OwnedMessage::Close(None));
+                                return message_record;
+                            }
+                        }
+                        
                     }
                 };
                 let message_record = message.clone();
@@ -116,6 +123,7 @@ impl WebSocket{
                     // Say what we received
                     _ => println!("Receive Loop: {:?}", message),
                 }
+            //}
             }
         //});
         return message_record;

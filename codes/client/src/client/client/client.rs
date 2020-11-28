@@ -37,9 +37,11 @@ pub fn main() {
     let mut serverControlPort = line.trim().parse::<i32>().unwrap();
     println!("servercontrolPort:{}",serverControlPort);
     
+    // note by lyf:因为后面新建的两个线程都用到此IP，为了避免move的问题，创建两个变量存一样的IP
     fin.read_line(&mut line).unwrap(); 
-    let mut selfIp = String::from(line.trim());
-    println!("selfIp:{}",selfIp);
+    let mut self_ServerConnect_Ip = String::from(line.trim());
+    let self_RequestManager_Ip = self_ServerConnect_Ip.clone();
+    println!("selfIp:{}",self_ServerConnect_Ip);
 
     line.clear();
     fin.read_line(&mut line).unwrap(); 
@@ -59,8 +61,8 @@ pub fn main() {
 
     line.clear();
     fin.read_line(&mut line).unwrap(); 
-    sta_rs = line.trim().parse::<i32>().unwrap();
-    println!("rs:{}\n",sta_rs);
+    unsafe{sta_rs = line.trim().parse::<i32>().unwrap();}
+    unsafe{println!("rs:{}\n",sta_rs);}
     //setup 返回
 
     /*dontpanic组中代码无此部分
@@ -116,7 +118,7 @@ pub fn main() {
     //let clientid = self.clientId.clone();
 
     let handle1 = thread::spawn(move || { 
-        let mut ServerConnecter = crate::client::connect::ServerConnecter::ServerConnecter::new(clientId,selfIp,selfDataPort);
+        let mut ServerConnecter = crate::client::connect::ServerConnecter::ServerConnecter::new(clientId,self_ServerConnect_Ip.clone(),selfDataPort);
         ServerConnecter.run(connect_status);
      });//let mut num = counter.lock().unwrap(); *num += 1;
     
@@ -126,8 +128,8 @@ pub fn main() {
     folderScanner.run(fileDetector_status);
     });*/
 
-    let handle2 = thread::spawn(move || {
-        let requestManager = crate::client::connect::RequestManager::RequestManager::new(selfDataPort,selfIp);
+    let handle2 = thread::spawn(move || { //note by lyf:requestManager声明为mut是因为websocket需要一个mut
+        let mut requestManager = crate::client::connect::RequestManager::RequestManager::new(selfDataPort,self_RequestManager_Ip);
         requestManager.run(fileDetector_status);
         });
 
@@ -151,5 +153,5 @@ pub fn main() {
 //java中按类实现，但全写在main里rs是main中定义的变量，此处有bug
 pub fn getRs() -> i32 {
     //返回剩余容量,待实现
-	return sta_rs;	
+	unsafe{return sta_rs;}
 }

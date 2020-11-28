@@ -71,27 +71,30 @@ impl FragmentManager {
         // 暂不进行并发数据操作
         //websocket的recv（）返回byte[]，这里可能有bug
 			let msg:String = match self.user.recv(){
-                OwnedMessage::Text(data) => data 
+                OwnedMessage::Text(data) => data,
+                _ => String::new()
             };
 			println!("msg:{}",msg);
 			//TODO token
-			//字符串比较相等，我忘了怎么比较了……，可能有bug
+			
 			if(msg=="U"){
 				println!("Upload");
 				let fileName:String = match self.user.recv(){
-                    OwnedMessage::Text(data) => data 
+                    OwnedMessage::Text(data) => data, 
+                    _ => String::new()
                 };
 				println!("{}",fileName);
-				self.recvDigest(fileName);
-				self.recvFragment(fileName);
+				self.recvDigest(fileName.clone());
+				self.recvFragment(fileName.clone());
 			} else if(msg == "D"){
 					println!("Download");
 					let fileName:String = match self.user.recv(){
-                        OwnedMessage::Text(data) => data 
+                        OwnedMessage::Text(data) => data,
+                        _ => String::new()
                     };
 					println!("{}",fileName);
-					self.sendFragment(fileName);
-					self.sendDigest(fileName);
+					self.sendFragment(fileName.clone());
+					self.sendDigest(fileName.clone());
 			} else if (msg == "E") {
 					println!("Echo");
 					self.user.echo();
@@ -257,7 +260,7 @@ impl FragmentManager {
     }
 
 		
-	 fn sendDigest(&self,fileName:String) -> bool {
+	 fn sendDigest(&mut self,fileName:String) -> bool {  //由于websocket需要mut 此处为&mut self
 		let mut status:bool = false;
 		let mut sentence:String;
 
@@ -272,7 +275,7 @@ impl FragmentManager {
 		return true;
 	 }
 
-	fn recvDigest(&self,fileName:String) -> bool{
+	fn recvDigest(&mut self,fileName:String) -> bool{
 		let mut s = String::new();
         s.push_str(&self.fragmentFolder);
         s.push('/');
@@ -282,7 +285,8 @@ impl FragmentManager {
 		//let mut f = File::open(&path).unwrap();
 		//dontpanic中recv_bytes为byte[]类型
 		let mut recv_bytes:Vec<u8> = match self.user.recv(){
-            OwnedMessage::Binary(data) => data 
+            OwnedMessage::Binary(data) => data,
+            _ => Vec::new()
         };;
 		println!("recvDigest : {:?}",recv_bytes);//不确定能否输出string
         fs::write(path,recv_bytes); 
