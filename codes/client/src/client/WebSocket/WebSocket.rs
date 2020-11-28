@@ -17,7 +17,7 @@ static mut sta_port:i32 = -1;
 
 pub struct WebSocket{
     //server:websocket::server::WsServer<websocket::server::NoTlsAcceptor, std::net::TcpListener>,
-    client:websocket::sync::Client<std::net::TcpStream>
+    client: websocket::sync::Client<std::net::TcpStream>
 }
 
 impl WebSocket{
@@ -29,17 +29,17 @@ impl WebSocket{
     //     self.server = self.server.bind(addr).unwrap();
     // }
 
-    pub fn new(server: &websocket::server::WsServer<websocket::server::NoTlsAcceptor, std::net::TcpListener>) -> WebSocket{
-        let request = &server.filter_map(Result::ok).next().unwrap();
+    pub fn new(server: &mut websocket::server::WsServer<websocket::server::NoTlsAcceptor, std::net::TcpListener>) -> WebSocket{
+        let request = &mut server.filter_map(Result::ok).next().unwrap();
         // 此处filter_map()返回值是一个迭代器，使用next()方法获得其中一个元素
-        thread::spawn(move || {
+        //thread::spawn(move || {
             if !request.protocols().contains(&"rust-websocket".to_string()) {
                 request.reject().unwrap();
-                return;
+                //return;
                 // TODO: 接到的连接不是websocket协议时，输出错误信息到log
             }
-            return;
-        });
+            //return;
+        //});
    
         let client = request.use_protocol("rust-websocket").accept().unwrap();
         WebSocket{
@@ -47,27 +47,27 @@ impl WebSocket{
         }   
     }
 
-    pub fn sendFile(self, f_path:&PathBuf) {
+    pub fn sendFile(&mut self, f_path:&PathBuf) {
         let mut f:File = File::open(&f_path.as_path()).unwrap();
         let mut contents = Vec::new();
         f.read_to_end(&mut contents);
         let message = OwnedMessage::Binary(contents);
-        self.client.send_message(&message).unwrap();
+        &mut self.client.send_message(&message).unwrap();
     }
 
-    pub fn sendMessage(self, msg: String) {
+    pub fn sendMessage(&mut self, msg: String) {
         let message = OwnedMessage::Text(msg);
-		self.client.send_message(&message).unwrap();
+		& mut self.client.send_message(&message).unwrap();
     }
 
-    pub fn echo(&self) -> OwnedMessage{
+    pub fn echo(&mut self) -> OwnedMessage{
         let message: OwnedMessage = self.recv();
         println!("Receive Loop: {:?}", message);
-        self.client.send_message(&message).unwrap();
+        & mut self.client.send_message(&message).unwrap();
         return message;
     }
 
-    pub fn recvFile(&self, f_path:&PathBuf) {
+    pub fn recvFile(&mut self, f_path:&PathBuf) {
         //let mut f:File = File::open(&f_path.as_path()).unwrap();
         let message: OwnedMessage = self.recv();
         match message{
@@ -93,7 +93,7 @@ impl WebSocket{
                         return message_record;
                     }
                 };
-                let message_record = message;
+                let message_record = message.clone();
                 match message {
                     OwnedMessage::Close(_) => {
                         // Got a close message, so send a close message and return
