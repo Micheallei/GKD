@@ -1,15 +1,16 @@
+#[derive(Clone)]
 pub struct FileItem {
-    id: i32,
-    name: String,
-    path: String,
-    attribute: String,
-    time: String,
-    nod: i32,
-    noa: i32,
-    is_folder: bool,
-    file_type: String,
-    file_size: i32,
-    whose: String,
+    pub id: i32,
+    pub name: String,
+    pub path: String,
+    pub attribute: String,
+    pub time: String,
+    pub nod: i32,
+    pub noa: i32,
+    pub is_folder: bool,
+    pub file_type: String,
+    pub file_size: i32,
+    pub whose: String,
 }
 
 impl FileItem {

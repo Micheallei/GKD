@@ -1,8 +1,11 @@
 use std::*;
 use std::convert::TryInto;
-include!("FileItem.rs");
-include!("RequestItem.rs");
-include!("DeviceItem.rs");
+//include!("FileItem.rs");
+//include!("RequestItem.rs");
+//include!("DeviceItem.rs");
+use super::DeviceItem::DeviceItem;
+use super::FileItem::FileItem;
+use super::RequestItem::RequestItem;
 use mysql as my;
 
 struct UserItem {
@@ -13,6 +16,7 @@ struct UserItem {
     time: i32,
 }
 
+#[derive(Clone)]
 struct FragmentItem {
     id: i32,
     path: Option<String>,
@@ -36,14 +40,14 @@ pub struct Query{
 impl Query {
     pub fn new() -> Query{
         //需要大家在自己的电脑把 root:XXXX 改成自己的 mysql 密码
-        let pool = my::Pool::new("mysql://root:pqzpqzpqz@localhost:3306/mysql").unwrap();
+        let pool = my::Pool::new("mysql://root:@localhost:3306/mysql").unwrap();
         Query {
             pool: pool,
         }
     }
 
     pub fn queryFile_Bypathname(&self, path: Option<String>, name: Option<String>) -> FileItem{
-        let selected: Result<Vec<FileItem>, mysql::Error> =
+        let mut selected: Result<Vec<FileItem>, mysql::Error> =
             self.pool.prep_exec("SELECT * FROM DFS.file WHERE NAME = :name AND PATH = :path",
                                 params!{"name" => name, "path" => path})
                 .map(|result| {
@@ -96,18 +100,19 @@ impl Query {
                         whose: "".to_string(),
                     }
                 }
+                let mut select_files = selected_files[0].clone();
                 return FileItem {
-                    id: selected_files[0].id,
-                    name: selected_files[0].name.clone(),
-                    path: selected_files[0].path.clone(),
-                    attribute: selected_files[0].attribute.clone(),
-                    time: selected_files[0].time.clone(),
-                    nod: selected_files[0].nod,
-                    noa: selected_files[0].noa,
-                    is_folder: selected_files[0].is_folder,
-                    file_type: selected_files[0].file_type.clone(),
-                    file_size: selected_files[0].file_size,
-                    whose: selected_files[0].whose.clone(),
+                    id: select_files.get_id().clone(),
+                    name: select_files.get_name(),
+                    path: select_files.get_path(),
+                    attribute: select_files.get_attribute(),
+                    time: select_files.get_time(),
+                    nod: select_files.get_nod().clone(),
+                    noa: select_files.get_noa().clone(),
+                    is_folder: select_files.is_folder().clone(),
+                    file_type: select_files.get_file_type(),
+                    file_size: select_files.get_file_size().clone(),
+                    whose: select_files.get_whose(),
                 }
             }
         }
@@ -221,7 +226,7 @@ impl Query {
                 if selected_fragments.len() == 0 {
                     return "".to_string();
                 }
-                return selected_fragments[0].path;
+                return selected_fragments[0].clone().path.unwrap();
             }
         }
     }
@@ -426,15 +431,15 @@ impl Query {
                 leftrs: 0,
             };
         }
-        let devices = selected_devices.unwrap();
+        let mut devices = selected_devices.unwrap();
         return DeviceItem {
-            id: devices[0].id,
-            ip: devices[0].ip.clone(),
-            port: devices[0].port.clone(),
-            is_online: devices[0].is_online,
-            rs: devices[0].rs,
-            time: devices[0].time,
-            leftrs: devices[0].leftrs,
+            id: devices[0].get_id().clone(),
+            ip: devices[0].get_ip(),
+            port: devices[0].get_port().clone(),
+            is_online: devices[0].is_online().clone(),
+            rs: devices[0].get_rs().clone(),
+            time: devices[0].get_time().clone(),
+            leftrs: devices[0].get_leftrs().clone(),
         }
     }
 
@@ -713,9 +718,9 @@ impl Query{
         let mut suc:i32 = -1;
         for mut stmt in self.pool.prepare(r"DELETE FROM DFS.FILE WHERE name=:name AND path=:path AND whose=:whose").into_iter() {
             stmt.execute(params!{
-                "name" => name,
-                "path" => path,
-                "whose" => whose
+                "name" => name.clone(),
+                "path" => path.clone(),
+                "whose" => whose.clone()
             }).unwrap();
             //此处未处理execute不成功时，返回-1的情况
         }
@@ -766,10 +771,10 @@ impl Query{
         let mut suc:i32 = -1;
         for mut stmt in self.pool.prepare(r"UPDATE DFS.FILE SET NAME=:newname WHERE name=:name AND path=:path AND whose=:whose;").into_iter() {
             stmt.execute(params!{
-                "newname" => newname,
-                "name" => Filename,
-                "path" => Filepath,
-                "whose" => whose
+                "newname" => newname.clone(),
+                "name" => Filename.clone(),
+                "path" => Filepath.clone(),
+                "whose" => whose.clone()
             }).unwrap().last_insert_id() as i32;
             //此处未处理execute不成功时，返回-1的情况
         }

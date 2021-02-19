@@ -1,11 +1,12 @@
+#[derive(Clone)]
 pub struct DeviceItem {
-    id: i32,
-    ip: String,
-    port: i32,
-    is_online: bool,
-    rs: i32,
-    time: i32,
-    leftrs: i32,
+    pub id: i32,
+    pub ip: String,
+    pub port: i32,
+    pub is_online: bool,
+    pub rs: i32,
+    pub time: i32,
+    pub leftrs: i32,
 }
 
 impl DeviceItem {

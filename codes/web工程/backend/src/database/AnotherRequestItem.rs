@@ -24,16 +24,16 @@ impl AnotherRequestItem {
         }
     }
 
-    pub fn get_ip(&mut self) -> i32 {
-        self.ip
+    pub fn get_ip(&mut self) -> String {
+        self.ip.clone()
     }
 
-    pub fn get_file_type_(&mut self) -> i32 {
-        self.file_type_
+    pub fn get_file_type_(&mut self) -> String {
+        self.file_type_.clone()
     }
 
     pub fn get_fragment_id(&mut self) -> i32 {
-        self.fragmentId
+        self.fragment_id
     }
 
     pub fn get_port(&self) -> String {

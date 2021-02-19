@@ -4,11 +4,12 @@ use std::ffi::{OsStr, OsString};
 use std::fs::{self, File, DirEntry, remove_file};
 use serde_json::{Result, Value,json};
 use serde::{Deserialize, Serialize};
+use std::convert::TryInto;
 
 use super::super::database::Query::Query;
 use super::super::com::Decoder::Decoder;
 use super::super::database::RequestItem::RequestItem;
-
+use super::super::database::AnotherRequestItem::AnotherRequestItem;
 
 #[derive(Serialize, Deserialize)]
 pub struct FileDownloader{
@@ -106,7 +107,7 @@ impl FileDownloader {
         self.nod = nnod;
     }
 
-    pub fn downloadRegister(path1:String, name1:String) -> String {
+    pub fn downloadRegister(path1:String, name1:String) -> FileDownloader {
         //return -1 if error
 		//return 0 if can not collect enough fragments
         //else, return 1
@@ -116,7 +117,7 @@ impl FileDownloader {
         let query = Query::new();
         let qpath: Option<String> = Some(path1);
         let qname: Option<String> = Some(name1);
-        let file_item = query.queryFile_Bypathname(qpath, qname);
+        let mut file_item = query.queryFile_Bypathname(qpath, qname);
         let mut online_device = query.queryOnlineDevice();
 
         let mut filedownloader=FileDownloader::new();//要返回到main中的数据
@@ -129,8 +130,8 @@ impl FileDownloader {
             return filedownloader;
         }
 
-        if (file_item.len() ==0 || file_item.get_nod() < 1) {
-            query.closeConnection();
+        if (file_item.get_nod() < 1) {
+            //query.closeConnection();
             let result = String::from("Error");
             //return_val = String::form("success");
             //return return_val;
@@ -141,25 +142,25 @@ impl FileDownloader {
             let nod = file_item.get_nod();
             let noa = file_item.get_noa();
             let id = file_item.get_id();
-            //let mut deviceID=0;
+            let mut deviceID=0;
             //let mut str = String::new();
             let mut request_items: Vec<AnotherRequestItem> = Vec::new();
-            let mut jsonArray:Vec<Value> = Vec::new();
+            let mut jsonArray: Vec<Value> = Vec::new();
             for i in 0..(noa+nod) {
-                let str = query.queryFragment(id * 100 + i);
+                let str = query.query_fragment(id * 100 + i);
                 if str == "" || str == "-1" {
                     continue;
                 }
                 let device_id: i32 = str.parse().unwrap();
                 for j in 0..online_device.len() {
                     if online_device[j].get_id() == device_id {
-                        let curDevice=query.queryDevice(deviceID);
+                        let mut curDevice=query.queryDevice(deviceID);
                         //request_items.push(RequestItem::init_2(1, id*100 + i, device_id));//pqz,1改为i
                         let formDetailsJson = json!({
                             "filename": (id*100 + i).to_string(),
                             "fragmentId": i.clone(),
-                            "ip":curDevice.getIp(),
-                            "port":curDevice.getPort().to_string()
+                            "ip":curDevice.get_ip(),
+                            "port":curDevice.get_port().to_string()
                         });
                         jsonArray.push(formDetailsJson);
                         break;
@@ -174,8 +175,8 @@ impl FileDownloader {
                 //return return_val;
                 return result;
             }*/
-            if jsonArray.len()<nod {
-                query.closeConnection();
+            if jsonArray.len()<nod.try_into().unwrap() {
+                //query.closeConnection();
                 let result = String::from("NotEnoughFragments");
                 filedownloader.setResult(result);
                 return filedownloader;
@@ -185,15 +186,15 @@ impl FileDownloader {
                 for i in 0..temp {
                     query.addRequest(request_items[i].clone());
                 }*/
-                filedownloader.devices=json!{(
+                filedownloader.devices=json!({
                     "forms":jsonArray
-                )};
-                filedownloader.setFileSize(file_item.get_file_size());
+                });
+                filedownloader.setFileSize(file_item.get_file_size().into());
                 filedownloader.setFileType(file_item.get_file_type());
-                filedownloader.setNod(file_item.get_nod());
-                filedownloader.setNoa(file_item.get_noa());
+                filedownloader.setNod(file_item.get_nod().into());
+                filedownloader.setNoa(file_item.get_noa().into());
 
-                query.closeConnection();
+                //query.closeConnection();
                 let result = String::from("OK");
                 filedownloader.setResult(result);
                 //return_val = String::form("success");
@@ -202,7 +203,7 @@ impl FileDownloader {
             }
         }
     }
-
+    /*
     pub fn progressCheck(path1:String, name1:String) -> String{
         //return -1 if error
 		//else, return a number from 0 to 100 as # of fragments which have been downloaded
@@ -292,5 +293,5 @@ impl FileDownloader {
             return result;
         }
     }
-
+    */
 }

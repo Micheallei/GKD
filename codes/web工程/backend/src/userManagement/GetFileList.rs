@@ -62,7 +62,7 @@ impl GetFileList {
     pub fn execute(whose:String,Querypath1:String) -> String {
         let query = Query::new();
         let tpath: Option<String> = Some(Querypath1);
-        let mut file_array = query.queryFileList(whose,tpath);
+        let mut file_array = query.query_file_list(Some(whose),tpath);
 
         let mut html:String = String::new();
         html = html + 
@@ -116,7 +116,7 @@ impl GetFileList {
     pub fn filedelete(namelist:Vec<String>,pathlist:Vec<String>,whose:String){
         let query = Query::new();
         for i in 0..namelist.len(){
-            query.filedelete(namelist[i].clone(),pathlist[i].clone(),whose.clone());
+            query.deleteFile_Byname(namelist[i].clone(),pathlist[i].clone(),whose.clone());
             //把数据库中对于数据项删除，参数为文件名、文件路径、whose
         }
     }
@@ -124,7 +124,7 @@ impl GetFileList {
     pub fn filerename(Filename:String,Filepath:String,newname:String,whose:String){
         let query = Query::new();
         //把数据库中对应文件项修改，参数为原文件名，文件路径，新名字，whose
-        query.filerename(Filename.clone(),Filepath.clone(),newname.clone()，whose.clone());
+        query.RenameFile(Filename.clone(),Filepath.clone(),newname.clone(),whose.clone());
     }
 
 

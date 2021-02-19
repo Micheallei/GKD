@@ -2,7 +2,8 @@
 extern crate mysql;
 
 use serde::{Deserialize, Serialize};
-use serde_json::{Result, Value, json};
+//use serde_json::{Result, Value, json};
+use serde_json::{Value, json};
 use actix_web::{
     get,post,http::header,middleware, web, App, HttpRequest, HttpResponse, HttpServer, Responder, Result,
 };
@@ -57,15 +58,15 @@ pub struct FileDelete_param {
 
 #[derive(Serialize, Deserialize)]//文件重命名时的数据格式
 pub struct FileRename_param {
-    Filename：String,
+    Filename: String,
     Filepath: String,
     newname:String,
     whose:String,
 }
 
 #[derive(Serialize, Deserialize)]//创建新文件夹时的数据格式
-pub struct FileRename_param {
-    Filename：String,
+pub struct NewFolder_param {
+    Filename: String,
     path: String,
     whose:String,
 }
@@ -90,7 +91,7 @@ pub struct Fileuploader_param{
 
 #[derive(Serialize, Deserialize)]//上传文件时的返回值数据格式
 pub struct Fileuploader_return {
-    result：String,
+    result: String,
     devices: Value,
     fileId:i32,
 }
@@ -102,13 +103,7 @@ struct Return_string {
 }
 
 
-/*
-#[get("/index1")]
-async fn index() -> impl Responder {
-    println!("sss");
-    HttpResponse::Ok().body("Hello world!")
-}
-*/
+
 #[post("/UserReg")]
 async fn register(params: web::Json<User>) -> web::Json<Return_string> {//pqz
     println!("username: {0} ,userPasswd:{1}",params.userName,params.userPasswd);
@@ -134,7 +129,7 @@ async fn downloadreg(params: web::Json<FileDownloader_param>) -> web::Json<FileD
     println!("path: {0} ,name:{1}",params.path,params.name);
     
     //println!("{}", result);
-    web::Json(FileDownloader::downloadRegister(params.path.clone(),params.name.clone());)
+    web::Json(FileDownloader::downloadRegister(params.path.clone(),params.name.clone()))
 }
 
 
@@ -148,6 +143,7 @@ async fn getfilelist(params: web::Json<GetFileList_param>) -> web::Json<Return_s
     })
 }
 
+/*
 #[post("/progressCheck")]
 async fn progresscheck(params: web::Json<FileDownloader_param>) -> web::Json<Return_string> {
     println!("path: {0} ,name:{1}",params.path,params.name);
@@ -167,7 +163,7 @@ async fn decodefile(params: web::Json<FileDownloader_param>) -> web::Json<Return
         result,//"Error"或"OK"
     })
 }
-
+*/
 
 #[post("/FileDelete")]
 async fn filedelete(params: web::Json<FileDelete_param>) -> web::Json<Return_string> {
@@ -193,7 +189,7 @@ async fn filerename(params: web::Json<FileRename_param>) -> web::Json<Return_str
 }
 
 #[post("/CreateDir")]
-async fn create_dir(params: web::Json<FileRename_param>) -> web::Json<Return_string> {
+async fn create_dir(params: web::Json<NewFolder_param>) -> web::Json<Return_string> {
     //println!("path: {0} ,name:{1}",params.path,params.name);
     GetFileList::create_dir(params.Filename.clone(),params.path.clone(),params.whose.clone());
     let result:String = GetFileList::execute(params.whose.clone(),params.path.clone());
@@ -207,12 +203,12 @@ async fn create_dir(params: web::Json<FileRename_param>) -> web::Json<Return_str
 async fn uploadregister(params: web::Json<Fileuploader_param>) -> web::Json<Fileuploader_return> {
     //println!("hhh");
     //println!("path: {0} ,name:{1}",params.path,params.name);
-    let mut fileuploader=FileUploader{
+    let mut fileuploader=FileUploader {
         serialVersionUID: 1,
         path: params.path.clone(),
         fileName: params.fileName.clone(),
         result: String::new(),
-        devices: serde_json::from_str(""),//?用空字符串来初始化
+        devices: serde_json::from_str("").unwrap(),//?用空字符串来初始化
         fileType: params.fileType.clone(),
         fileSize: params.fileSize.clone(),
         noa: params.noa.clone(),
@@ -222,10 +218,13 @@ async fn uploadregister(params: web::Json<Fileuploader_param>) -> web::Json<File
     };
     //println!("{}", result);
     fileuploader.uploadRegister();
+    let mut result = fileuploader.getResult();
+    let mut devices = fileuploader.getDevices();
+    let mut fileId = fileuploader.getFileID();
     web::Json(Fileuploader_return{
-        fileuploader.result.clone(),
-        fileuploader.devices.clone(),
-        fileuploader.fileId.clone(),
+        result,
+        devices,
+        fileId,
     })
 }
 
@@ -266,14 +265,13 @@ async fn main()  -> std::io::Result<()>{
             .service(login)
             .service(downloadreg)
             .service(getfilelist)
-            .service(progresscheck)
-            .service(decodefile)
-            .service(FileDelete)
-            .service(FileRename)
-            .service(CreateDir)
-            .service(uploadRegister)
+            .service(filedelete)
+            .service(filerename)
+            .service(create_dir)
+            .service(uploadregister)
     })
     .bind("127.0.0.1:8000")?
     .run()
     .await
 }
+//.service(progresscheck)    .service(decodefile)

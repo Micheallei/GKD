@@ -7,6 +7,7 @@ use std::fs::{self, File, read_to_string, DirEntry, remove_file};
 use serde_json::{Result, Value, json};
 use std::ffi::{OsStr, OsString};
 use std::*;
+use std::convert::TryInto;
 //import com.opensymphony.xwork2.ActionSupport;
 //import database.AnotherRequestItem;
 use super::super::database::DeviceItem::DeviceItem;
@@ -17,19 +18,18 @@ use super::super::com::Decoder;
 use std::ptr::null;
 use std::iter::once_with;
 
-
 pub struct FileUploader{
-    serialVersionUID: i32,
-    path: String,
-    fileName: String,
-    result: String,
-    devices: Value,
-    fileType: String,
-    fileSize: i32,
-    noa: i32,
-    nod: i32,
-    whose: String,
-    fileId: i32,
+    pub serialVersionUID: i32,
+    pub path: String,
+    pub fileName: String,
+    pub result: String,
+    pub devices: Value,
+    pub fileType: String,
+    pub fileSize: i32,
+    pub noa: i32,
+    pub nod: i32,
+    pub whose: String,
+    pub fileId: i32,
     //fragmentFolderPath:PathBuf,
     //fileFolderPath:PathBuf,
 
@@ -46,7 +46,7 @@ impl FileUploader{
             path: String::new(),
             fileName: String::new(),
             result: String::new(),
-            devices: serde_json::from_str(""),//?用空字符串来初始化
+            devices: serde_json::from_str("").unwrap(),//?用空字符串来初始化
             fileType: String::new(),
             fileSize: 0,
             noa: 0,
@@ -140,7 +140,7 @@ impl FileUploader{
     }
 
 
-    pub fn getAllocateDeviceList(&mut self, query: Query, nod: i32, noa: i32, whose: String) -> Vec<DeviceItem> {
+    pub fn getAllocateDeviceList(&mut self, query: &Query, nod: i32, noa: i32, whose: String) -> Vec<DeviceItem> {
         //确认有在线设备
         let mut onlineDevice = query.queryOnlineDevice();
         if(onlineDevice.len() == 0){
@@ -174,18 +174,18 @@ impl FileUploader{
         let mut fragmentSize = self.fileSize / self.nod;
         // 由于有 vlab，必然有至少一台distance <= 30% * 24 = 7??
         //Java:ArrayList 类是一个可以动态修改的数组，与普通数组的区别就是它是没有固定大小的限制，我们可以添加或删除元素。
-        let mut distanceId: Vec<i32> = Vec::new();
+        let mut distanceId: Vec<usize> = Vec::new();
         //原本的java代码总是插入i到ArrayList的首部，这里采用反向的循环，总是插在vector的尾部，正确性有待验证?
         let mut i: usize = onlineDeviceNum - 1;
         while i >= 0 {
             if ((distance[i] <= 7) && (onlineDevice[i].get_leftrs() > fragmentSize)){
                 // 差距够小 且 至少可以分配一个碎片
-                distanceId.push(i.clone() as i32);
+                distanceId.push(i.clone());
                 i = i - 1;
             }
         }
         let mut size = distanceId.len();// 有效在线主机数
-        if(size < 1){
+        if size < 1 {
             let file = DeviceItem {
                 id: 0,
                 ip: "".to_string(),
@@ -198,21 +198,23 @@ impl FileUploader{
             return vec![file];
         }
         // 根据碎片数量和有效在线主机数，确定结果
-        let deviceItemList: Vec<DeviceItem> = Vec::new();//原本初始化大小应为nod+noa
+        let mut deviceItemList: Vec<DeviceItem> = Vec::new();//原本初始化大小应为nod+noa
         if(self.noa + self.nod <= (size as i32)) {
             for i in 0..self.nod + self.noa{
-                deviceItemList[i] = onlineDevice[distanceId.get(i)];
-                deviceItemList[i].set_leftrs(deviceItemList[i].get_leftrs() - fragmentSize);
+                deviceItemList.push(onlineDevice[distanceId[i as usize]].clone());
+                let mut rs_size:i32 = deviceItemList[i as usize].get_leftrs() - fragmentSize;
+                deviceItemList[i as usize].set_leftrs(rs_size);
             }
         }
         else{
             let mut i = self.noa + self.nod - 1;
             let mut j = 0;
             while i >= 0 {
-                let mut thisdevice = onlineDevice[distanceId.get(j)];
-                if(thisdevice.get_leftrs() > fragmentSize){
-                    deviceItemList[i] = thisdevice;
-                    thisdevice.set_leftrs(thisdevice.get_leftrs() - fragmentSize);
+                let mut thisdevice = onlineDevice[distanceId[j as usize]].clone();
+                if thisdevice.get_leftrs() > fragmentSize {
+                    let mut rs_size:i32 =thisdevice.get_leftrs() - fragmentSize;
+                    thisdevice.set_leftrs(rs_size);
+                    deviceItemList[i as usize] = thisdevice.clone();
                     query.alterDevice(thisdevice);
                     i = i - 1;
                 }
@@ -226,29 +228,29 @@ impl FileUploader{
         println!("uploadRegister is called");
 
 
-        let query = Query::new();
-        let qpath: Option<String> = Some(path1);
-        let qname: Option<String> = Some(name1);
+        let mut query = Query::new();
+        let qpath: Option<String> = Some(self.path.clone());
+        let qname: Option<String> = Some(self.fileName.clone());
         let file_item = query.queryFile_Bypathname(qpath, qname);
         let mut online_device = query.queryOnlineDevice();
 
         //源代码部分都返回success，有点迷惑
         if online_device.len() == 0 {
             println!("1");
-            self.result = String::from("NotEnoughFragments");
+            self.result = String::from("NotEnoughDevices");
             let return_val = String::from("success");
             return return_val;
         }
 
         //nod:Number of division  noa:Number of append
-        //没想到这么表示fileItem != null
-        if file_item.get_noa() < 1 {
+        //fileItem != null ,考虑到query.queryFile_Bypathname的出错时的返回值，id=0或-1，此时认为没查询到
+        if file_item.get_id() <= 0 {
             self.result = String::from("DuplicateFileName");
-            return_val = String::from("success");
+            let return_val = String::from("success");
             return return_val;
         }
         else{
-            let mut newFile = FileItem::init2(self.fileName,clone(), self.path.clone(), "rwxrwxrwx", "", self.nod.clone(), self.noa.clone(), false, self.fileType.clone(), self.fileSize.clone(), self.whose.clone());
+            let mut newFile = FileItem::init_2(self.fileName.clone(), self.path.clone(), "rwxrwxrwx".to_string(), "".to_string(), self.nod.clone(), self.noa.clone(), false, self.fileType.clone(), self.fileSize.clone(), self.whose.clone());
             self.fileId = query.addFile(newFile);
             if self.fileId < 0{
                 //TODO
@@ -259,8 +261,8 @@ impl FileUploader{
             let mut jsonArray:Vec<Value> = Vec::new();
             //let mut fileUploader = FileUploader::new();
             //下面提示出现了所有权问题,故加了clone
-            let mut deviceItemList:Vec<DeviceItem> = self.getAllocateDeviceList(query, self.nod.clone(), self.noa.clone(), self.whose.clone());
-            if deviceItemList[0].get_Ip()==""{
+            let mut deviceItemList:Vec<DeviceItem> = self.getAllocateDeviceList(&query, self.nod.clone(), self.noa.clone(), self.whose.clone());
+            if deviceItemList[0].get_ip()==""{
                 self.result = String::from("NotEnoughDevices");
                 let mut return_val = String::from("success");
                 return return_val;
@@ -269,13 +271,13 @@ impl FileUploader{
                 let mut formDetailsJson = json!({
                     "filename": (self.fileId * 100 + i).to_string(),
                     "fragmentID": i.clone(),
-                    "ip": deviceItemList[i].get_Ip(),
-                    "port": deviceItemList[i].get_Port(),
+                    "ip": deviceItemList[i as usize].get_ip(),
+                    "port": deviceItemList[i as usize].get_port(),
                 });
                 jsonArray.push(formDetailsJson);
-                query.addFragment(self.fileId * 100 + i, deviceItemList[i].get_Id().to_string());
+                query.addFragment(self.fileId * 100 + i, deviceItemList[i as usize].get_id().to_string());
             }
-            if jsonArray.len() < (self.noa + self.nod){//??
+            if jsonArray.len() <((self.noa + self.nod)).try_into().unwrap() {//??
                 self.result = String::from("NotEnoughDevices");
                 let mut return_val = String::from("success");
                 return return_val;
@@ -294,7 +296,7 @@ impl FileUploader{
         }
     }
 
-
+    /*
     pub fn progressCheck(path1:String, name1:String) -> String{
         //return -1 if error
         //else, return a number from 0 to 100 as # of fragments which have been downloaded
@@ -384,7 +386,7 @@ impl FileUploader{
             return result;
         }
     }
-
+    */
 
 
 }
