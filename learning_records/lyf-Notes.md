@@ -336,7 +336,55 @@ for request in server.filter_map(Result::ok) {
       }
   ```
 
-  
+
+问题3：关于一些move的问题
+
+换了一个函数，不再使用实例代码中的`incoming_messages()`，改成手写while(true)循环，当NoDataAvailable时，break 
+
+注释掉的是原来的部分，这样修改可以省去 split() 时的所有权问题
+
+```rust
+//let (mut receiver, mut sender) = self.client.split().unwrap();
+while(true){
+            //for message in receiver.incoming_messages() {
+                let message = self.client.recv_message();
+                let message = match message {
+                    Ok(m) => m,
+                    Err(e) => {
+                        match e {
+                            NoDataAvailable => break, // 没有receive到消息时，break跳出while true
+                            _ => {
+                                println!("Receive Loop: {:?}", e);
+                                let _ = tx.send(OwnedMessage::Close(None));
+                                return message_record;
+                            }
+                        }
+                        
+                    }
+                };
+                let message_record = message.clone();
+                match message {
+                    OwnedMessage::Close(_) => {
+                        // Got a close message, so send a close message and return
+                        let _ = tx.send(OwnedMessage::Close(None));
+                        //return;
+                    }
+                    OwnedMessage::Ping(data) => {
+                        match tx.send(OwnedMessage::Pong(data)) {
+                            // Send a pong in response
+                            Ok(()) => (),
+                            Err(e) => {
+                                println!("Receive Loop: {:?}", e);
+                                //return;
+                            }
+                        }
+                    }
+                    // Say what we received
+                    _ => println!("Receive Loop: {:?}", message),
+                }
+            //}
+            }
+```
 
 
 

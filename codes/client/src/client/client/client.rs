@@ -38,6 +38,7 @@ pub fn main() {
     println!("servercontrolPort:{}",serverControlPort);
     
     // note by lyf:因为后面新建的两个线程都用到此IP，为了避免move的问题，创建两个变量存一样的IP
+    line.clear();
     fin.read_line(&mut line).unwrap(); 
     let mut self_ServerConnect_Ip = String::from(line.trim());
     let self_RequestManager_Ip = self_ServerConnect_Ip.clone();
