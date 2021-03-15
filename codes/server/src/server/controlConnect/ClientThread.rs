@@ -48,6 +48,7 @@ impl ClientThread{
                         println!("No such device ID!");
                         return 0;
                     }
+                    deviceitem.set_leftrs(rs - deviceitem.rs + deviceitem.leftrs);
                     self.client_id = id;
                     //deviceitem.set_ip(ip.to_string());
                     //deviceitem.set_port(port.try_into().unwrap());

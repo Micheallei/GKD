@@ -201,14 +201,15 @@ async fn create_dir(params: web::Json<NewFolder_param>) -> web::Json<Return_stri
 
 #[post("/uploadRegister")]
 async fn uploadregister(params: web::Json<Fileuploader_param>) -> web::Json<Fileuploader_return> {
-    //println!("hhh");
+    
     //println!("path: {0} ,name:{1}",params.path,params.name);
+    //let device_str = "";
     let mut fileuploader=FileUploader {
         serialVersionUID: 1,
         path: params.path.clone(),
         fileName: params.fileName.clone(),
         result: String::new(),
-        devices: serde_json::from_str("").unwrap(),//?用空字符串来初始化
+        devices: json!({"1":1}),//serde_json::from_str(device_str).unwrap(),//?用空字符串来初始化
         fileType: params.fileType.clone(),
         fileSize: params.fileSize.clone(),
         noa: params.noa.clone(),
@@ -216,11 +217,13 @@ async fn uploadregister(params: web::Json<Fileuploader_param>) -> web::Json<File
         whose: params.whose.clone(),
         fileId: 0,
     };
-    //println!("{}", result);
+    println!("hhh");
     fileuploader.uploadRegister();
+    println!("hhh");
     let mut result = fileuploader.getResult();
     let mut devices = fileuploader.getDevices();
     let mut fileId = fileuploader.getFileID();
+    println!("result:{}",result);
     web::Json(Fileuploader_return{
         result,
         devices,

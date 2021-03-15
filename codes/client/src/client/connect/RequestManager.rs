@@ -17,7 +17,6 @@ impl RequestManager {
         let mut addr = String::new();
         addr.push_str("127.0.0.1:");
         addr.push_str(&port.to_string()); 
-        println!("requestmanager server socket address:{}",addr);
         RequestManager{
             self_data_port:port,
             self_ip:self_ip,

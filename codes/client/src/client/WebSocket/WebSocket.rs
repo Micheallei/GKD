@@ -34,15 +34,18 @@ impl WebSocket{
         let request = request.next().unwrap();
         // 此处filter_map()返回值是一个迭代器，使用next()方法获得其中一个元素
         //thread::spawn(move || {
-            if !request.protocols().contains(&"rust-websocket".to_string()) {
-                request.reject().unwrap();
-                return None;
-                // TODO: 接到的连接不是websocket协议时，输出错误信息到log
-            }
-            //return;
-        //});
+        println!("enter new websocket");
+            // if !request.protocols().contains(&"websocket".to_string()) {
+        //         println!("reject a connection");
+        //         request.reject().unwrap();
+        //         return None;
+        //         // TODO: 接到的连接不是websocket协议时，输出错误信息到log
+        //     }
+        //     //return;
+        // //});
    
-        let client = request.use_protocol("rust-websocket").accept().unwrap();
+        let client = request.use_protocol("websocket").accept().unwrap();
+        println!("accept a connection");
         let result:Option<WebSocket> = Some(WebSocket{
             client:client
         });
@@ -121,7 +124,10 @@ impl WebSocket{
                         }
                     }
                     // Say what we received
-                    _ => println!("Receive Loop: {:?}", message),
+                    _ => {
+                        println!("Receive Loop: {:?}", message);
+                        return message;
+                    }
                 }
             //}
             }

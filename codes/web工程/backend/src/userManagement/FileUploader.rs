@@ -161,7 +161,7 @@ impl FileUploader{
         for i in 0..onlineDeviceNum{
             let mut save = query.query_user_time(self.whose.clone());
             let mut time = onlineDevice[i].get_time();
-            distance[i] = 0;
+            distance.push(0);
             for j in 0..24{
                 if ((time & 1) == 0 && (save & 1) == 1){//0和1的&改为了&
                     distance[i] = distance[i] + 1;
@@ -177,14 +177,23 @@ impl FileUploader{
         let mut distanceId: Vec<usize> = Vec::new();
         //原本的java代码总是插入i到ArrayList的首部，这里采用反向的循环，总是插在vector的尾部，正确性有待验证?
         let mut i: usize = onlineDeviceNum - 1;
+        println!("!!!");
         while i >= 0 {
-            if ((distance[i] <= 7) && (onlineDevice[i].get_leftrs() > fragmentSize)){
+            println!("onlineDevice[i].get_leftrs(): {0}, fragmantsize: {1}", onlineDevice[i].get_leftrs(), fragmentSize);
+            if onlineDevice[i].get_leftrs() > fragmentSize {
+             //if ((distance[i] <= 7) && (onlineDevice[i].get_leftrs() > fragmentSize)){
                 // 差距够小 且 至少可以分配一个碎片
                 distanceId.push(i.clone());
-                i = i - 1;
+                
             }
+            if i == 0 {
+                break;
+            }
+            i = i - 1;
         }
+        println!("111");
         let mut size = distanceId.len();// 有效在线主机数
+        println!("online devices(size): {}", size);
         if size < 1 {
             let file = DeviceItem {
                 id: 0,
@@ -198,7 +207,8 @@ impl FileUploader{
             return vec![file];
         }
         // 根据碎片数量和有效在线主机数，确定结果
-        let mut deviceItemList: Vec<DeviceItem> = Vec::new();//原本初始化大小应为nod+noa
+        let mut deviceItemList: Vec<DeviceItem> = Vec::new();//原本初始化大小应为nod+noa/
+        /*
         if(self.noa + self.nod <= (size as i32)) {
             for i in 0..self.nod + self.noa{
                 deviceItemList.push(onlineDevice[distanceId[i as usize]].clone());
@@ -206,21 +216,22 @@ impl FileUploader{
                 deviceItemList[i as usize].set_leftrs(rs_size);
             }
         }
-        else{
-            let mut i = self.noa + self.nod - 1;
-            let mut j = 0;
-            while i >= 0 {
-                let mut thisdevice = onlineDevice[distanceId[j as usize]].clone();
-                if thisdevice.get_leftrs() > fragmentSize {
-                    let mut rs_size:i32 =thisdevice.get_leftrs() - fragmentSize;
-                    thisdevice.set_leftrs(rs_size);
-                    deviceItemList[i as usize] = thisdevice.clone();
-                    query.alterDevice(thisdevice);
-                    i = i - 1;
-                }
-                j = (j + 1) % size;
+        else{*/
+        let mut i = self.noa + self.nod - 1;
+        let mut j = 0;
+        while i >= 0 {
+            let mut thisdevice = onlineDevice[distanceId[j as usize]].clone();
+            if thisdevice.get_leftrs() > fragmentSize {
+                let mut rs_size:i32 =thisdevice.get_leftrs() - fragmentSize;
+                thisdevice.set_leftrs(rs_size);
+                deviceItemList.push(thisdevice.clone());
+                //println!("thisdevice.get_leftrs(): {}", thisdevice.get_leftrs());
+                query.alterDevice(thisdevice);
+                i = i - 1;
             }
+            j = (j + 1) % size;
         }
+        
         return deviceItemList;
     }
 
@@ -237,14 +248,14 @@ impl FileUploader{
         //源代码部分都返回success，有点迷惑
         if online_device.len() == 0 {
             println!("1");
-            self.result = String::from("NotEnoughDevices");
+            self.result = String::from("NoOnlineDevices");
             let return_val = String::from("success");
             return return_val;
         }
 
         //nod:Number of division  noa:Number of append
         //fileItem != null ,考虑到query.queryFile_Bypathname的出错时的返回值，id=0或-1，此时认为没查询到
-        if file_item.get_id() <= 0 {
+        if file_item.get_id() > 0 {
             self.result = String::from("DuplicateFileName");
             let return_val = String::from("success");
             return return_val;
@@ -262,6 +273,7 @@ impl FileUploader{
             //let mut fileUploader = FileUploader::new();
             //下面提示出现了所有权问题,故加了clone
             let mut deviceItemList:Vec<DeviceItem> = self.getAllocateDeviceList(&query, self.nod.clone(), self.noa.clone(), self.whose.clone());
+            //println!("in uploadreg: {}", deviceItemList[0].port);
             if deviceItemList[0].get_ip()==""{
                 self.result = String::from("NotEnoughDevices");
                 let mut return_val = String::from("success");
@@ -278,7 +290,7 @@ impl FileUploader{
                 query.addFragment(self.fileId * 100 + i, deviceItemList[i as usize].get_id().to_string());
             }
             if jsonArray.len() <((self.noa + self.nod)).try_into().unwrap() {//??
-                self.result = String::from("NotEnoughDevices");
+                self.result = String::from("NotEnoughDevices1");
                 let mut return_val = String::from("success");
                 return return_val;
             }

@@ -1,10 +1,8 @@
-
-
 pub struct RequestItem {
-    id: i32,
-    type_: i32,
-    fragmentId: i32,
-    deviceId: i32,
+    pub id: i32,
+    pub type_: i32,
+    pub fragmentId: i32,
+    pub deviceId: i32,
 }
 
 impl RequestItem {
@@ -23,6 +21,15 @@ impl RequestItem {
             type_,
             fragmentId: fid,
             deviceId: did,
+        }
+    }
+
+    pub fn clone(&self) -> RequestItem {
+        RequestItem {
+            id: self.id,
+            type_: self.type_,
+            fragmentId: self.fragmentId,
+            deviceId: self.deviceId,
         }
     }
 

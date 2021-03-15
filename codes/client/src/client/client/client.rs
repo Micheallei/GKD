@@ -20,7 +20,7 @@ pub fn main() {
     //read setup.ini 
     let mut serverControlPort:i32 = 0;
         
-    let setUpFile = String::from("D:\\setup.ini");
+    let setUpFile = String::from("/home/qu/Desktop/setup.ini");
     let file = File::open(setUpFile).unwrap();
     println!("open setup.ini successfully!");
 

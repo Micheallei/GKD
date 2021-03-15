@@ -1,37 +1,52 @@
+#[derive(Clone)]
 pub struct FileItem {
-    id: i32,
-    name: String,
-    path: String,
-    attribute: String,
-    time: String,
-    noa: i32,
-    is_folder: bool,
+    pub id: i32,
+    pub name: String,
+    pub path: String,
+    pub attribute: String,
+    pub time: String,
+    pub nod: i32,
+    pub noa: i32,
+    pub is_folder: bool,
+    pub file_type: String,
+    pub file_size: i32,
+    pub whose: String,
 }
 
 impl FileItem {
     fn init(id: i32, name: String, path: String, attribute: String,
-        time: String, noa: i32, is_folder: bool) -> Self {
+        time: String, nod: i32, noa: i32, is_folder: bool, file_type: String,
+        file_size: i32, whose: String) -> Self {
             FileItem {
                 id,
                 name,
                 path,
                 attribute,
                 time,
+                nod,
                 noa,
                 is_folder,
+                file_type,
+                file_size,
+                whose,
             }
         }
 
     pub fn init_2(name: String, path: String, attribute: String,
-        time: String, noa: i32, is_folder: bool) -> Self {
+        time: String, noa: i32, nod: i32, is_folder: bool, file_type: String,
+        file_size: i32, whose: String) -> Self {
             FileItem {
                 id: 0,
                 name,
                 path,
                 attribute,
                 time,
+                nod,
                 noa,
                 is_folder,
+                file_type,
+                file_size,
+                whose,
             }
         }
 
@@ -91,6 +106,10 @@ impl FileItem {
         self.time = time;
     }
 
+    pub fn get_nod(&self) -> i32{
+        self.nod
+    }
+
     pub fn get_noa(&self) -> i32{
         self.noa
     }
@@ -105,5 +124,31 @@ impl FileItem {
 
     pub fn set_folder(&mut self, is_folder:bool) {
         self.is_folder = is_folder;
+    }
+
+    pub fn get_file_type(&self) -> String {
+        let chars: Vec<char> = self.file_type.chars().collect();
+        let mut string = String::new();
+        for c in chars {
+            string.push(c);
+        }
+        string
+    }
+
+    pub fn get_file_size(&mut self) -> i32 {
+        self.file_size
+    }
+
+    pub fn set_whose(&mut self, whose:String) {
+        self.whose = whose;
+    }
+
+    pub fn get_whose(&self) -> String {
+        let chars: Vec<char> = self.whose.chars().collect();
+        let mut string = String::new();
+        for c in chars {
+            string.push(c);
+        }
+        string
     }
 }

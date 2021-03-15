@@ -1,5 +1,5 @@
 use std::thread;
-use super::database::Query::DeviceItem;
+use super::database::DeviceItem::DeviceItem;
 
 pub struct DFS_server {
     connecting: bool,
@@ -13,7 +13,7 @@ impl DFS_server {
         if !devices.is_empty() {
             for device in &mut devices {
                 let dvc: DeviceItem = DeviceItem::init(device.get_id(), device.get_ip(), device.get_port(),
-                                                        false, device.get_rs());
+                                                        false, device.get_rs(),device.get_time(),device.get_leftrs());
                 query.alterDevice(dvc);
             }
         }

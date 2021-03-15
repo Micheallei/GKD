@@ -40,7 +40,7 @@ pub struct Query{
 impl Query {
     pub fn new() -> Query{
         //需要大家在自己的电脑把 root:XXXX 改成自己的 mysql 密码
-        let pool = my::Pool::new("mysql://root:@localhost:3306/mysql").unwrap();
+        let pool = my::Pool::new("mysql://root:201314@localhost:3306/mysql").unwrap();
         Query {
             pool: pool,
         }
@@ -358,7 +358,7 @@ impl Query {
 
     pub fn queryOnlineDevice(&self) -> Vec<DeviceItem> {
         let selected_devices: Result<Vec<DeviceItem>, mysql::Error> =
-            self.pool.prep_exec("SELECT * FROM DFS.DEVICE WHERE ISONLINE=true ORDER BY RS DESC",
+            self.pool.prep_exec("SELECT * FROM DFS.DEVICE WHERE IS_ONLINE=true ORDER BY RS DESC",
                                 ())
                 .map(|result| {
                     result.map(|x| x.unwrap()).map(|row| {
@@ -787,7 +787,7 @@ impl Query{
         //println!("device:ip={},port={},rs={},id={}",device.get_ip(),device.get_port(),device.get_rs(),device.get_id());
         let mut suc:i32 = -1;
         if device.is_online(){
-            for mut stmt in self.pool.prepare("UPDATE DFS.DEVICE SET IP=:ip,PORT=:port,ISONLINE=true,
+            for mut stmt in self.pool.prepare("UPDATE DFS.DEVICE SET IP=:ip,PORT=:port,IS_ONLINE=true,
             RS=:rs,LEFTRS=:leftrs WHERE id=:id;").into_iter() {
                 let res = stmt.execute(params!{
                     "ip" => device.get_ip(),
@@ -803,7 +803,7 @@ impl Query{
             }
 
         } else {
-            for mut stmt in self.pool.prepare(r"UPDATE DFS.DEVICE SET IP=:ip,PORT=:port,ISONLINE=false,
+            for mut stmt in self.pool.prepare(r"UPDATE DFS.DEVICE SET IP=:ip,PORT=:port,IS_ONLINE=false,
             RS=:rs,LEFTRS=:leftrs WHERE id=:id;").into_iter() {
                 let res = stmt.execute(params!{
                     "ip" => device.get_ip(),

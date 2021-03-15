@@ -72,7 +72,7 @@ impl FragmentManager {
         //websocket的recv（）返回byte[]，这里可能有bug
 			let msg:String = match self.user.recv(){
                 OwnedMessage::Text(data) => data,
-                _ => String::new()
+                _ => String::from("dismatch")
             };
 			println!("msg:{}",msg);
 			//TODO token
