@@ -149,8 +149,8 @@ impl Query {
 
     pub fn query_file_list(&self, whose: Option<String>, path: Option<String>) -> Vec<FileItem>{
         let selected_files: Result<Vec<FileItem>, mysql::Error> =
-            self.pool.prep_exec("SELECT * FROM DFS.file WHERE WHOSE = :whose AND PATH = :path",
-                                params!{"whose" => whose, "path" => path})
+            self.pool.prep_exec("SELECT * FROM DFS.FILE WHERE WHOSE = :whose AND PATH = :path",
+                                params!{"whose" => whose.unwrap(), "path" => path.unwrap()})
                 .map(|result| {
                     result.map(|x| x.unwrap()).map(|row| {
                         let (id, name, path, attribute, time, nod, noa, is_folder, file_type, file_size, whose) = my::from_row(row);
@@ -302,6 +302,7 @@ impl Query {
             }
         }
     }
+
 
     /*pub fn queryFile_Bypath(&self, path: Option<String>) -> Vec<FileItem>{
         let selected_files: Result<Vec<FileItem>, mysql::Error> =
@@ -683,8 +684,10 @@ impl Query {
 impl Query{
     pub fn addFile(&self, mut file:FileItem) -> i32{
         let mut suc:i32 = -1;
+        println!("execute query.addfile");
         if file.is_folder(){
-            for mut stmt in self.pool.prepare(r"INSERT INTO DFS.FILE (NAME,PATH,ATTRIBUTE,TIME,NOD,NOA,ISFOLDER,WHOSE,FILETYPE,FILESIZE)
+            println!("in addfile: file is folder");
+            for mut stmt in self.pool.prepare(r"INSERT INTO DFS.FILE (NAME,PATH,ATTRIBUTE,TIME,NOD,NOA,IS_FOLDER,WHOSE,FILE_TYPE,FILE_SIZE)
                 VALUES (:name,:path,:attribute,:time,:nod,:noa,true,:whose,:filetype,:filesize);").into_iter() {
                 suc = stmt.execute(params!{
                     "name" => file.get_name(),
@@ -700,7 +703,8 @@ impl Query{
                 //此处未处理execute不成功时，返回-1的情况
             }
         } else {
-            for mut stmt in self.pool.prepare(r"INSERT INTO DFS.FILE (NAME,PATH,ATTRIBUTE,TIME,NOD,NOA,ISFOLDER,WHOSE,FILETYPE,FILESIZE)
+            println!("in addfile: file is not folder");
+            for mut stmt in self.pool.prepare(r"INSERT INTO DFS.FILE (NAME,PATH,ATTRIBUTE,TIME,NOD,NOA,IS_FOLDER,WHOSE,FILE_TYPE,FILE_SIZE)
             VALUES (:name,:path,:attribute,:time,:nod,:noa,false,:whose,:filetype,:filesize);").into_iter() {
             suc = stmt.execute(params!{
                 "name" => file.get_name(),
@@ -716,6 +720,7 @@ impl Query{
                 //此处未处理execute不成功时，返回-1的情况
             }
         }
+        println!("addfile result: {}", suc);
         return suc;
     }
 
@@ -749,7 +754,7 @@ impl Query{
         let mut suc:i32 = -1;
         if file.is_folder(){
             for mut stmt in self.pool.prepare(r"UPDATE DFS.FILE SET NAME=:name,PATH=:path,ATTRIBUTE=:attribute,
-            TIME=:time,NOD=:nod,NOA=:noa,ISFOLDER=true,whose=:whose,filetype=:filetype,filesize=:filesize WHERE id=:id;").into_iter() {
+            TIME=:time,NOD=:nod,NOA=:noa,IS_FOLDER=true,whose=:whose,filetype=:filetype,filesize=:filesize WHERE id=:id;").into_iter() {
                 stmt.execute(params!{
                     "name" => file.get_name(),
                     "path" => file.get_path(),
@@ -765,7 +770,7 @@ impl Query{
             }
         } else {
             for mut stmt in self.pool.prepare(r"UPDATE DFS.FILE SET NAME=:name,PATH=:path,ATTRIBUTE=:attribute,
-            TIME=:time,NOD=:nod,NOA=:noa,ISFOLDER=false,whose=:whose,filetype=:filetype,filesize=:filesize WHERE id=:id;").into_iter() {
+            TIME=:time,NOD=:nod,NOA=:noa,IS_FOLDER=false,whose=:whose,filetype=:filetype,filesize=:filesize WHERE id=:id;").into_iter() {
                 stmt.execute(params!{
                     "name" => file.get_name(),
                     "path" => file.get_path(),
@@ -885,7 +890,7 @@ impl Query{
 
     pub fn addRequest(&self, mut request:RequestItem) -> i32{
         let mut suc:i32 = -1;
-        for mut stmt in self.pool.prepare(r"INSERT INTO DFS.REQUEST (TYPE,FRAGMENTID,DEVICEID)
+        for mut stmt in self.pool.prepare(r"INSERT INTO DFS.REQUEST (TYPE_,FRAGMENTID,DEVICEID)
         VALUES (:type,:fragmentid,:deviceid)").into_iter() {
             suc = stmt.execute(params!{
                 "type" => request.get_type(),

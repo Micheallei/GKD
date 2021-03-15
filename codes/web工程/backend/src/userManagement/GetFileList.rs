@@ -60,10 +60,12 @@ impl GetFileList {
 
 
     pub fn execute(whose:String,Querypath1:String) -> String {
+
         let query = Query::new();
         let tpath: Option<String> = Some(Querypath1);
         let mut file_array = query.query_file_list(Some(whose),tpath);
-
+        println!("in getfilelist, filearray length: {}", file_array.len());
+        println!("file id: {}", file_array[0].id);
         let mut html:String = String::new();
         html = html + 
             "<tr class=\"file_list_back\">"+
@@ -79,12 +81,17 @@ impl GetFileList {
             let status = String::from("false");
             //return_val = String::from("success");
             //return return_val;
+
+            println!("status: {}", status);
         }
         else {
             let status = String::from("true");
-        }
 
+            println!("status: {}", status);
+        }
         for i in 0..file_array.len() {
+            println!("name: {}",file_array[i].get_name());
+            println!("attribute: {}",file_array[i].get_attribute()); 
             html = html + "<tr class=\"file_list_go\">";
             html = html + "<td> </td>";
             if file_array[i].is_folder() {

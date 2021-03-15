@@ -94,6 +94,7 @@ pub struct Fileuploader_return {
     result: String,
     devices: Value,
     fileId:i32,
+    html:String,
 }
 
 
@@ -217,17 +218,18 @@ async fn uploadregister(params: web::Json<Fileuploader_param>) -> web::Json<File
         whose: params.whose.clone(),
         fileId: 0,
     };
-    println!("hhh");
     fileuploader.uploadRegister();
-    println!("hhh");
+    //println!("hhh");
     let mut result = fileuploader.getResult();
     let mut devices = fileuploader.getDevices();
     let mut fileId = fileuploader.getFileID();
-    println!("result:{}",result);
+    let html:String=GetFileList::execute(params.whose.clone(),params.path.clone());
+    println!("HTML:{}",html);
     web::Json(Fileuploader_return{
         result,
         devices,
         fileId,
+        html,
     })
 }
 
