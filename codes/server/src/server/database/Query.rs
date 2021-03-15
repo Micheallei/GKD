@@ -48,7 +48,7 @@ impl Query {
 
     pub fn queryFile_Bypathname(&self, path: Option<String>, name: Option<String>) -> FileItem{
         let mut selected: Result<Vec<FileItem>, mysql::Error> =
-            self.pool.prep_exec("SELECT * FROM DFS.file WHERE NAME = :name AND PATH = :path",
+            self.pool.prep_exec("SELECT * FROM DFS.FILE WHERE NAME = :name AND PATH = :path",
                                 params!{"name" => name, "path" => path})
                 .map(|result| {
                     result.map(|x| x.unwrap()).map(|row| {
@@ -120,7 +120,7 @@ impl Query {
 
     pub fn query_user_time(&self, whose: String) -> i32{
         let selected_users: Result<Vec<UserItem>, mysql::Error> =
-            self.pool.prep_exec("SELECT * FROM DFS.user WHERE NAME = :name",
+            self.pool.prep_exec("SELECT * FROM DFS.USER WHERE NAME = :name",
                                 params!{"name" => whose})
                 .map(|result| {
                     result.map(|x| x.unwrap()).map(|row| {
@@ -207,7 +207,7 @@ impl Query {
 
     pub fn query_fragment(&self, id: i32) -> String{
         let selected_fragments: Result<Vec<FragmentItem>, mysql::Error> =
-            self.pool.prep_exec("SELECT * FROM DFS.fragment WHERE ID = :id",
+            self.pool.prep_exec("SELECT * FROM DFS.FRAGMENT WHERE ID = :id",
                                 params!{"id" => id})
                 .map(|result| {
                     result.map(|x| x.unwrap()).map(|row| {
@@ -233,7 +233,7 @@ impl Query {
 
     pub fn queryFile_Byid(&self, id: i32) -> FileItem {
         let selected: Result<Vec<FileItem>, mysql::Error> =
-            self.pool.prep_exec("SELECT * FROM DFS.file WHERE ID = :id",
+            self.pool.prep_exec("SELECT * FROM DFS.FILE WHERE ID = :id",
                 params!{"id" => id})
                 .map(|result| {
                     result.map(|x| x.unwrap()).map(|row| {
@@ -306,7 +306,7 @@ impl Query {
 
     /*pub fn queryFile_Bypath(&self, path: Option<String>) -> Vec<FileItem>{
         let selected_files: Result<Vec<FileItem>, mysql::Error> =
-            self.pool.prep_exec("SELECT * FROM DFS.file WHERE PATH = :path",
+            self.pool.prep_exec("SELECT * FROM DFS.FILE WHERE PATH = :path",
                                 params!{"path" => path})
                 .map(|result| {
                     result.map(|x| x.unwrap()).map(|row| {
@@ -352,7 +352,7 @@ impl Query {
 
     pub fn queryFragmentNumbers(&self, fileId: i32) -> i32{
         let selected_fragments: Result<Vec<FragmentItem>, mysql::Error> =
-            self.pool.prep_exec("SELECT * FROM DFS.fragment WHERE ID>=:id_1 AND ID<:id_2",
+            self.pool.prep_exec("SELECT * FROM DFS.FRAGMENT WHERE ID>=:id_1 AND ID<:id_2",
                                 params!{"id_1" => fileId*100, "id_2" => (fileId+1)*100})
                 .map(|result| {
                     result.map(|x| x.unwrap()).map(|row| {
