@@ -738,7 +738,7 @@ impl Query{
 
     pub fn deleteFile_Byname(&self, name: String, path: String, whose: String) -> i32{
         let mut suc:i32 = -1;
-        for mut stmt in self.pool.prepare(r"DELETE FROM DFS.FILE WHERE name=:name AND path=:path AND whose=:whose").into_iter() {
+        for mut stmt in self.pool.prepare(r"DELETE FROM DFS.FILE WHERE NAME=:name AND PATH=:path AND WHOSE=:whose").into_iter() {
             stmt.execute(params!{
                 "name" => name.clone(),
                 "path" => path.clone(),
@@ -754,7 +754,7 @@ impl Query{
         let mut suc:i32 = -1;
         if file.is_folder(){
             for mut stmt in self.pool.prepare(r"UPDATE DFS.FILE SET NAME=:name,PATH=:path,ATTRIBUTE=:attribute,
-            TIME=:time,NOD=:nod,NOA=:noa,IS_FOLDER=true,whose=:whose,filetype=:filetype,filesize=:filesize WHERE id=:id;").into_iter() {
+            TIME=:time,NOD=:nod,NOA=:noa,IS_FOLDER=true,WHOSE=:whose,FILE_TYPE=:filetype,FILE_SIZE=:filesize WHERE ID=:id;").into_iter() {
                 stmt.execute(params!{
                     "name" => file.get_name(),
                     "path" => file.get_path(),
@@ -770,7 +770,7 @@ impl Query{
             }
         } else {
             for mut stmt in self.pool.prepare(r"UPDATE DFS.FILE SET NAME=:name,PATH=:path,ATTRIBUTE=:attribute,
-            TIME=:time,NOD=:nod,NOA=:noa,IS_FOLDER=false,whose=:whose,filetype=:filetype,filesize=:filesize WHERE id=:id;").into_iter() {
+            TIME=:time,NOD=:nod,NOA=:noa,IS_FOLDER=false,WHOSE=:whose,FILE_TYPE=:filetype,FILE_SIZE=:filesize WHERE ID=:id;").into_iter() {
                 stmt.execute(params!{
                     "name" => file.get_name(),
                     "path" => file.get_path(),
@@ -791,7 +791,7 @@ impl Query{
 
     pub fn RenameFile(&self, Filename:String, Filepath:String, newname:String, whose:String) -> i32{
         let mut suc:i32 = -1;
-        for mut stmt in self.pool.prepare(r"UPDATE DFS.FILE SET NAME=:newname WHERE name=:name AND path=:path AND whose=:whose;").into_iter() {
+        for mut stmt in self.pool.prepare(r"UPDATE DFS.FILE SET NAME=:newname WHERE NAME=:name AND PATH=:path AND WHOSE=:whose;").into_iter() {
             stmt.execute(params!{
                 "newname" => newname.clone(),
                 "name" => Filename.clone(),
@@ -810,7 +810,7 @@ impl Query{
         let mut suc:i32 = -1;
         if device.is_online(){
             for mut stmt in self.pool.prepare("UPDATE DFS.DEVICE SET IP=:ip,PORT=:port,IS_ONLINE=true,
-            RS=:rs,LEFTRS=:leftrs WHERE id=:id;").into_iter() {
+            RS=:rs,LEFTRS=:leftrs WHERE ID=:id;").into_iter() {
                 let res = stmt.execute(params!{
                     "ip" => device.get_ip(),
                     "port" => device.get_port(),
@@ -826,7 +826,7 @@ impl Query{
 
         } else {
             for mut stmt in self.pool.prepare(r"UPDATE DFS.DEVICE SET IP=:ip,PORT=:port,IS_ONLINE=false,
-            RS=:rs,LEFTRS=:leftrs WHERE id=:id;").into_iter() {
+            RS=:rs,LEFTRS=:leftrs WHERE ID=:id;").into_iter() {
                 let res = stmt.execute(params!{
                     "ip" => device.get_ip(),
                     "port" => device.get_port(),
@@ -875,7 +875,7 @@ impl Query{
 
     pub fn alterFragment(&self,id:i32,path:String) -> i32{
         let mut suc:i32 = -1;
-        for mut stmt in self.pool.prepare(r"UPDATE DFS.FRAGMENT SET PATH=:path WHERE id=:id;").into_iter() {
+        for mut stmt in self.pool.prepare(r"UPDATE DFS.FRAGMENT SET PATH=:path WHERE ID=:id;").into_iter() {
             let res = stmt.execute(params!{
                 "path" => path.clone(),
                 "id" => id
@@ -935,7 +935,7 @@ impl Query{
 
     pub fn alterUser(&self,id:i32,name:String,passwd:String) -> i32{
         let mut suc:i32 = -1;
-        for mut stmt in self.pool.prepare(r"UPDATE INTO DFS.USER SET NAEME=:name,PASSWD=passwd WHERE id=:id").into_iter() {
+        for mut stmt in self.pool.prepare(r"UPDATE INTO DFS.USER SET NAME=:name,PASSWD=passwd WHERE ID=:id").into_iter() {
             let res = stmt.execute(params!{
                 "name" => name.clone(),
                 "passwd" => passwd.clone(),
