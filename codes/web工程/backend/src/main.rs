@@ -168,7 +168,7 @@ async fn decodefile(params: web::Json<FileDownloader_param>) -> web::Json<Return
 
 #[post("/FileDelete")]
 async fn filedelete(params: web::Json<FileDelete_param>) -> web::Json<Return_string> {
-    //println!("path: {0} ,name:{1}",params.path,params.name);
+    println!("name: {0} ,path:{1}",params.namelist[0],params.pathlist[0]);
     GetFileList::filedelete(params.namelist.clone(),params.pathlist.clone(),params.whose.clone());
     let result:String = GetFileList::execute(params.whose.clone(),params.pathlist[0].clone());
     println!("{}", result);

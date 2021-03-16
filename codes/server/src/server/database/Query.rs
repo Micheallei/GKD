@@ -450,6 +450,17 @@ impl Query {
             };
         }
         let mut devices = selected_devices.unwrap();
+        if 0 == devices.len() {
+            return DeviceItem {
+                id: 0,
+                ip: "".to_string(),
+                port: 0,
+                is_online: false,
+                rs: 0,
+                time: 0,
+                leftrs: 0,
+            };
+        }
         return DeviceItem {
             id: devices[0].get_id().clone(),
             ip: devices[0].get_ip(),

@@ -60,7 +60,7 @@ impl GetFileList {
 
 
     pub fn execute(whose:String,Querypath1:String) -> String {
-
+        println!("getfilelist: whose: {0}, path: {1}", whose, Querypath1);
         let query = Query::new();
         let tpath: Option<String> = Some(Querypath1);
         let mut file_array = query.query_file_list(Some(whose),tpath);
@@ -92,8 +92,14 @@ impl GetFileList {
         for i in 0..file_array.len() {
             println!("name: {}",file_array[i].get_name());
             println!("attribute: {}",file_array[i].get_attribute()); 
+            
             html = html + "<tr class=\"file_list_go\">";
             html = html + "<td> </td>";
+            
+            if file_array[0].get_id()==0 || file_array[0].get_id()==-1{
+                html = html+"</tr>";
+                break;
+            }
             if file_array[i].is_folder() {
                 html = html + 
                     "<td> <label><input type=\"checkbox\"></label> 　　<span class=\"glyphicon glyphicon-folder-open\"></span>　"+
@@ -123,6 +129,15 @@ impl GetFileList {
     pub fn filedelete(namelist:Vec<String>,pathlist:Vec<String>,whose:String){
         let query = Query::new();
         for i in 0..namelist.len(){
+            let qpath: Option<String> = Some(pathlist[i].clone());
+            let qname: Option<String> = Some(namelist[i].clone());
+            let mut file_item = query.queryFile_Bypathname(qpath, qname);
+            let file_id = file_item.get_id();
+            for j in 0..6 {
+                let fragment_id = file_id * 100 + j;
+                //TODO: delete local fragment
+                query.deleteFragment(fragment_id);
+            }
             query.deleteFile_Byname(namelist[i].clone(),pathlist[i].clone(),whose.clone());
             //把数据库中对于数据项删除，参数为文件名、文件路径、whose
         }

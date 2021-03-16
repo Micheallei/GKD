@@ -34,7 +34,7 @@ function WebSocketDownload(ip,port,fragmentName,content,digest,fragmentId)
 	var ret_digest;
 	if ("WebSocket" in window)
 	{
-		let ws = new WebSocket("ws://"+ip+":"+port);
+		let ws = new WebSocket("ws://"+ip+":"+port, 'websocket');
 		ws.binaryType="arraybuffer";
 		ws.onopen = function()//发送信息
 		{
@@ -339,8 +339,8 @@ function fileDownload() {
 	var name1;
 
 	//重置时钟
-    window.clearInterval(int);
-	millisecond = second = minute = hour = 0;
+    //window.clearInterval(int);
+	//millisecond = second = minute = hour = 0;
 	
 	var item=$("#file_list_body").children();
 	item = item.next();
@@ -362,7 +362,7 @@ function fileDownload() {
 			name1 = name1 + $.trim(children[1].innerText);
 			//alert(path + "  " + name);
 
-
+/*
 //从向后端发送请求开始计时
 			function timer() {
 				millisecond = millisecond + 50;
@@ -385,9 +385,9 @@ function fileDownload() {
 				//document.getElementById('timetext').value=hour+'时'+minute+'分'+second+'秒'+millisecond+'毫秒';
 
 			}
-			int = setInterval(timer, 50);
+			//int = setInterval(timer, 50);
 
-
+*/
 			/*
              *
              * 此处应当利用ａｊａｘ　远程调用　downloadRegister(String path, String name)；
@@ -470,37 +470,38 @@ function filedelete(){
 		name1 = "";
 		path1 = "";
 		//如果ｉｔｅｍ不为空，则进行处理
-		var children=item.children();
-		if( (children[1].children[1].className=="glyphicon glyphicon-file") && (children[1].children[0].children[0].checked) )
-		{
+		var children = item.children();
+		if ((children[1].children[1].className == "glyphicon glyphicon-file") && (children[1].children[0].children[0].checked)) {
 			//文件路径
 			path1 = path1 + "/";
-			/*********/	if(curr_path_array.length>1)
-			path1="";
-			for(var i=1;i<curr_path_array.length;i++)
-				path1 = path1 + curr_path_array[i] + "/" ;
+			/*********/
+			if (curr_path_array.length > 1)
+				path1 = "";
+			for (var i = 1; i < curr_path_array.length; i++)
+				path1 = path1 + curr_path_array[i] + "/";
 			//文件名
 			name1 = name1 + $.trim(children[1].innerText);
-			//alert(path + "  " + name);
+			//alert(path1 + "  " + name1);
+			filename_list.push(name1);
+			filepath_list.push(path1);
 		}
-		filename_list.push(name1);
-		filepath_list.push(path1);
-		item=item.next();
+		item = item.next();
 	}
-
+	console.log(filename_list);
+	console.log(filepath_list);
 	$.ajax({
 		url:"http://127.0.0.1:8000/FileDelete",
 		type:"POST",
 		data:JSON.stringify({//一次性传过去所有选中文件的信息
 			namelist:filename_list,
 			pathlist:filepath_list,
-			whose:$.cookie(username),
+			whose:$.cookie("username"),
 		}),
 		dataType:"json",
 		contentType:"application/json; charset=utf-8",
 		success:function(databack){
-			//var obj = $.parseJSON(databack);
-			var new_file_list = databack.result;//html字符串
+			var obj = databack;
+			var new_file_list = obj.result;//html字符串
 			//alert(new_file_list);
 			$("#file_list_body").html(new_file_list);
 		}

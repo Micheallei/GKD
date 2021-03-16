@@ -172,7 +172,7 @@ impl FragmentManager {
         }*/
         let mut s = String:: new();
         s.push_str(&self.fragmentFolder);
-        s.push('\\');
+        s.push('/');
         //s.push_str(&self.fragmentID.to_string());
         s.push_str(&fileName);
 			println!("{}", s);

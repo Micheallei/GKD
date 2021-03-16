@@ -119,7 +119,7 @@ impl FileDownloader {
         let qname: Option<String> = Some(name1);
         let mut file_item = query.queryFile_Bypathname(qpath, qname);
         let mut online_device = query.queryOnlineDevice();
-
+        println!("name: {0}, path: {1}", file_item.get_name(),file_item.get_path());
         let mut filedownloader=FileDownloader::new();//要返回到main中的数据
 
         if online_device.len() == 0 {
@@ -142,19 +142,21 @@ impl FileDownloader {
             let nod = file_item.get_nod();
             let noa = file_item.get_noa();
             let id = file_item.get_id();
-            let mut deviceID=0;
             //let mut str = String::new();
             let mut request_items: Vec<AnotherRequestItem> = Vec::new();
             let mut jsonArray: Vec<Value> = Vec::new();
             for i in 0..(noa+nod) {
                 let str = query.query_fragment(id * 100 + i);
+                //println!("query frgment result: {}", str);
                 if str == "" || str == "-1" {
                     continue;
                 }
                 let device_id: i32 = str.parse().unwrap();
                 for j in 0..online_device.len() {
                     if online_device[j].get_id() == device_id {
-                        let mut curDevice=query.queryDevice(deviceID);
+                        
+                        let mut curDevice=query.queryDevice(device_id);
+                        println!("query device: ip: {0}, port:{1}", curDevice.ip, curDevice.port);
                         //request_items.push(RequestItem::init_2(1, id*100 + i, device_id));//pqz,1改为i
                         let formDetailsJson = json!({
                             "filename": (id*100 + i).to_string(),
@@ -193,6 +195,7 @@ impl FileDownloader {
                 filedownloader.setFileType(file_item.get_file_type());
                 filedownloader.setNod(file_item.get_nod().into());
                 filedownloader.setNoa(file_item.get_noa().into());
+                filedownloader.setName(file_item.get_name());
 
                 //query.closeConnection();
                 let result = String::from("OK");
