@@ -5,6 +5,8 @@ use std::io::prelude::*;
 use std::io::BufReader;
 use std::path::PathBuf;
 use std::net::UdpSocket;
+use log::{info,warn,debug,error,trace};
+use log4rs;
 
 static mut sta_rs:i32 = -1;
 
@@ -15,13 +17,14 @@ pub fn main() {
     let mut selfIp:String=String::new();
     let mut selfDataPort:i32 = 0;
     let mut rs:i32 = 0;
+    info!("client start");
     println!("client start");
 
 
     //read setup.ini 
     let mut serverControlPort:i32 = 0;
         
-    let setUpFile = String::from("./setup.ini");
+    let setUpFile = String::from(".\\setup.ini");
     let file = File::open(setUpFile).unwrap();
     println!("open setup.ini successfully!");
 
