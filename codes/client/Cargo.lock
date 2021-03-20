@@ -134,6 +134,7 @@ name = "client_test"
 version = "0.1.0"
 dependencies = [
  "lazy_static",
+ "log 0.4.11",
  "log4rs",
  "reed-solomon-erasure",
  "websocket",

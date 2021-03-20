@@ -1,5 +1,7 @@
 use std::thread;
 use super::database::DeviceItem::DeviceItem;
+use log::{info,warn,debug,error,trace};
+use log4rs;
 
 pub struct DFS_server {
     connecting: bool,
@@ -8,6 +10,7 @@ pub struct DFS_server {
 impl DFS_server {
     pub fn main (args: String) {
         println!("Server start");
+        info!("server start");
         let query = super::database::Query::Query::new();
         let mut devices:Vec<DeviceItem> = query.queryOnlineDevice();
         if !devices.is_empty() {
