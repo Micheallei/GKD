@@ -538,7 +538,7 @@ function filerename(new_name){
 					Filename:name1,
 					Filepath:path1,
 					newname:new_name,
-					whose:$.cookie(username),
+					whose:$.cookie('username'),
 				}),
 				dataType:"json",
 				contentType:"application/json; charset=utf-8",
@@ -553,6 +553,7 @@ function filerename(new_name){
 
 			break;
 		}
+		item = item.next();
 	}
 }
 
@@ -588,7 +589,7 @@ $(document).ready(function(){
 		$("#files").click();
 	});
 	
-	//文件夹重命名
+	//文件重命名
 	$("#button_rename").click(function() {
 		$('#my_dialog_rename').dialog({
             modal:true,
@@ -602,13 +603,14 @@ $(document).ready(function(){
 	$("#rename_dir_cancel").click(function(){
 		console.info("取消");
 		$("#filename").val("");
-		$('#my_dialog_rename').dialog("close");
+		document.getElementById("my_dialog_rename").style.display="none";
 	});
 
 	//文件重命名的弹出框中的确定函数
 	$("#rename_dir_save").click(function(){
-		$('#my_dialog_rename').dialog("close");
-		var new_name = document.getElementById("filename").value;   
+		document.getElementById("my_dialog_rename").style.display="none";
+		var new_name = document.getElementById("filename").value;
+		$("#filename").val("");
 		filerename(new_name);
 	});
 
@@ -626,14 +628,18 @@ $(document).ready(function(){
     //文件夹创建的弹出框中的取消函数
     $("#create_dir_cancel").click(function(){
         console.info("取消");
-        $("#filename").val("");
-        $('#my_dialog').dialog("close");
+        $("#foldername").val("");
+		document.getElementById("my_dialog").style.display="none";
+        //$('#my_dialog').dialog("close");
     });
 
     //文件夹创建的弹出框中的确定函数
     $("#create_dir_save").click(function(){
-        $('#my_dialog').dialog("close");
-        var create_name = document.getElementById("filename").value;   
+        //$('#my_dialog').dialog("close");
+		document.getElementById("my_dialog").style.display="none";
+        var create_name = document.getElementById("foldername").value;
+        console.log(create_name);
+		$("#foldername").val("");
 		//当前路径
 		var path1 = "/";
 		if(curr_path_array.length>1)
@@ -647,7 +653,7 @@ $(document).ready(function(){
 			data:JSON.stringify({
 				Filename:create_name,
 				path:path1,
-				whose:$.cookie(username),
+				whose:$.cookie('username'),
 			}),
 			dataType:"json",
 			contentType:"application/json; charset=utf-8",
@@ -677,23 +683,24 @@ $(document).ready(function(){
 					$("#statusFeedback").text("您所点击的是文件而不是文件夹，无法进入该目录！");
 					return;
 				}
-				//更新路径显示
-				curr_path_array = curr_path_array.concat( $.trim(this.children[1].innerText) );			//此处用$.trim去除空格
-				curr_path_html = "<li>ROOT</li>";
-				for(var i=1;i<curr_path_array.length;i++)
-				curr_path_html = curr_path_html + "<li>" + curr_path_array[i] + "</li>";
-				$("#curr_path").html(curr_path_html);		
-				//ajax
-				var QueryPath1="/";
-/*********/		if(curr_path_array.length>1)
-					QueryPath1="";
-				for(var i=1;i<curr_path_array.length;i++)
-				{
-					QueryPath1 = QueryPath1 + curr_path_array[i] + "/" ;
-				}
-				var whose1 = $.cookie("username");
-				//alert(queryPath);
-				$.ajax({
+				else if(!this.children[1].children[0].children[0].checked){
+					//更新路径显示
+					curr_path_array = curr_path_array.concat( $.trim(this.children[1].innerText) );			//此处用$.trim去除空格
+					curr_path_html = "<li>ROOT</li>";
+					for(var i=1;i<curr_path_array.length;i++)
+						curr_path_html = curr_path_html + "<li>" + curr_path_array[i] + "</li>";
+					$("#curr_path").html(curr_path_html);
+					//ajax
+					var QueryPath1="/";
+					/*********/		if(curr_path_array.length>1)
+						QueryPath1="";
+					for(var i=1;i<curr_path_array.length;i++)
+					{
+						QueryPath1 = QueryPath1 + curr_path_array[i] + "/" ;
+					}
+					var whose1 = $.cookie("username");
+					//alert(queryPath);
+					$.ajax({
 						url:"http://127.0.0.1:8000/GetFileList",
 						type:"POST",
 						data:JSON.stringify({
@@ -708,8 +715,12 @@ $(document).ready(function(){
 							//alert(new_file_list);
 							$("#file_list_body").html(new_file_list);
 						}
-				});
-				$("#statusFeedback").text("成功进入该目录！");
+					});
+					$("#statusFeedback").text("成功进入该目录！");
+				}
+				else{
+					$("#statusFeedback").text("请先取消打勾！");
+				}
 			}
 	);
 	

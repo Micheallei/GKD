@@ -13,6 +13,10 @@
 <script src="../js/jquery/jquery.cookie.js"></script>
 <script src="../js/bootstrap-3.3.7/js/bootstrap.min.js"></script>
 <link rel="stylesheet" type="text/css" href="../js/bootstrap-3.3.7/css/bootstrap.min.css">
+
+<!-- <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script> -->
+<script src="https://code.jquery.com/ui/1.11.1/jquery-ui.min.js"></script>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.11.1/themes/smoothness/jquery-ui.css" />
 <!--AJAX相关js动作-->
 <script src="../js/ec/object_hash.js" type="text/javascript"></script>
 <script src="../js/ec/erasure.js"></script>
@@ -183,7 +187,7 @@
 <!--会弹出的提交文件名的框-->
 <div id="my_dialog" title="新建文件夹"  style="display: none" >
     <form>
-        <p>文件名：<input type="text" id="filename" /></p>
+        <p>文件名：<input type="text" id="foldername" /></p>
         <div style="float: right;">
 			
            <!--   <button class="my-btn-gray" ng-click="create_dir_cancel()">取消</button>

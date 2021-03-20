@@ -1,105 +1,23 @@
+## 测试目标
+
+* 多个小文件、大文件上传下载速度与ceph对比
+* 局域网（vlab）、VPN上测试
+* 找论文，性能测试通用指标，有目标地优化（论文不需要看懂）
+
 ## 项目运行debug记录
 
-* server和client接收的setup.ini文件格式还不统一，涉及读文件转化到mysql表项问题。server报错：
-~~~
-thread '<unnamed>' panicked at 'Couldn't convert Row { ID: Int(1), IP: Bytes(""), PORT: Int(0), IS_ONLINE: Int(1), RS: Int(0), TIME: Int(0), LEFTRS: Int(0) } to type (i32, alloc::string::String, i32, bool, i32). (see FromRow documentation)', /home/qu/.cargo/registry/src/github.com-1ecc6299db9ec823/mysql_common-0.19.2/src/row/convert.rs:82:39
-~~~
-backend 报错：
-~~~
-thread 'actix-rt:worker:5' panicked at 'called `Result::unwrap()` on an `Err` value: Error("EOF while parsing a value", line: 1, column: 0)', src/main.rs:211:43
-~~~
-
-将backend的database文件夹复制到server内，改了query.rs中frombytes函数后，目前报错：
-~~~
-error[E0603]: struct import `FileItem` is private
-  --> src/server/dataConnect/ClientThread.rs:12:36
-   |
-12 | use super::super::database::Query::FileItem;
-   |                                    ^^^^^^^^ private struct import
-   |
-note: the struct import `FileItem` is defined here...
-  --> src/server/database/Query.rs:7:5
-   |
-7  | use super::FileItem::FileItem;
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
-note: ...and refers to the struct `FileItem` which is defined here
-  --> src/server/database/FileItem.rs:2:1
-   |
-2  | pub struct FileItem {
-   | ^^^^^^^^^^^^^^^^^^^ consider importing it directly
-
-error[E0603]: struct import `RequestItem` is private
-  --> src/server/dataConnect/ClientThread.rs:13:36
-   |
-13 | use super::super::database::Query::RequestItem;
-   |                                    ^^^^^^^^^^^ private struct import
-   |
-note: the struct import `RequestItem` is defined here...
-  --> src/server/database/Query.rs:8:5
-   |
-8  | use super::RequestItem::RequestItem;
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-note: ...and refers to the struct `RequestItem` which is defined here
-  --> src/server/database/RequestItem.rs:1:1
-   |
-1  | pub struct RequestItem {
-   | ^^^^^^^^^^^^^^^^^^^^^^ consider importing it directly
-
-error[E0603]: struct import `DeviceItem` is private
- --> src/server/DFS_server.rs:2:29
-  |
-2 | use super::database::Query::DeviceItem;
-  |                             ^^^^^^^^^^ private struct import
-  |
-note: the struct import `DeviceItem` is defined here...
- --> src/server/database/Query.rs:6:5
-  |
-6 | use super::DeviceItem::DeviceItem;
-  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-note: ...and refers to the struct `DeviceItem` which is defined here
- --> src/server/database/DeviceItem.rs:2:1
-  |
-2 | pub struct DeviceItem {
-  | ^^^^^^^^^^^^^^^^^^^^^ consider importing it directly
-
-
-~~~
-
-* 网页可以注册和登陆，不能上传文件。报错：
-~~~
-Uncaught ReferenceError: curr_path_array is not defined
-    at encodeCallBack (majorPage_ajax.js:285)
-    at FileReader.upLoader (majorPage_ajax.js:253)
-encodeCallBack @ majorPage_ajax.js:285
-upLoader @ majorPage_ajax.js:253
-load (async)
-encodeFile @ majorPage_ajax.js:273
-fileUpload @ majorPage_ajax.js:330
-onchange @ majorPage.jsp:121
-~~~
-
-网页登陆之后就有报warning：
-~~~
-jquery.js:3860 jQuery.Deferred exception: $scope is not defined ReferenceError: $scope is not defined
-    at HTMLDocument.<anonymous> (http://localhost:8080/DFS/js/majorPage_ajax.js:596:2)
-    at mightThrow (http://localhost:8080/DFS/js/jquery/jquery.js:3583:29)
-    at process (http://localhost:8080/DFS/js/jquery/jquery.js:3651:12) undefined
-~~~
-
-error:
-~~~
-jquery.js:3869 Uncaught ReferenceError: $scope is not defined
-    at HTMLDocument.<anonymous> (majorPage_ajax.js:596)
-    at mightThrow (jquery.js:3583)
-    at process (jquery.js:3651)
-~~~
-
-* 将`curr_path_array`设置成全局变量
-
+* setup.ini中第四行需要跟代码中的websocket端口一致
+* delete缺陷
+* 不能下载文件夹
+* 不能一次上传多个文件/上传文件夹
+* 访问控制：服务器/浏览器和存储结点交互时没有token验证，安全性问题；一般用公钥加密就可以；调用现成的库
+* 编解码多线程优化，最好多核（这条重要）
+* 尽量不要涉及内核态的操作，注意系统调用，用trace工具检查
+* 根据用户需求（可用性指标几个九），定制化编码，根据概率（可用性要求、机器可用性、设备在线概率）算需要编码多少冗余块-是否需要增加数据库表项？需要用户输入要求？在编解码调用RSE时查数据库确定参数？
 
 ## 运行llw组webcontent的步骤
 
-* 1. 将mysql相关的写死的密码改成本机密码（搜索替换“201314”），运行mysql，`mysql -u root -p <mysql.sql
+* 1. 将mysql相关的写死的密码改成本机密码（搜索替换“201314”），运行mysql，`mysql -u root -p < mysql.sql
 `导入mysql.sql数据库
 * 2. 将setup.ini中暂存文件碎片的文件夹改为本机上设置的文件夹。
 * 3. 在intellij中打开webcontent。打开Run/Debug Configurations，添加local Tomcat Server，在Application Server Configure 中选择本机tomcat文件夹。将上方Name改为DFS_server。在Deploy中添加war exploded。
