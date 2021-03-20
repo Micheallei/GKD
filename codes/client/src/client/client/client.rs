@@ -4,6 +4,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::path::PathBuf;
+use std::net::UdpSocket;
 
 static mut sta_rs:i32 = -1;
 
@@ -20,7 +21,7 @@ pub fn main() {
     //read setup.ini 
     let mut serverControlPort:i32 = 0;
         
-    let setUpFile = String::from("/home/qu/Desktop/setup.ini");
+    let setUpFile = String::from("./setup.ini");
     let file = File::open(setUpFile).unwrap();
     println!("open setup.ini successfully!");
 
@@ -38,11 +39,15 @@ pub fn main() {
     println!("servercontrolPort:{}",serverControlPort);
     
     // note by lyf:因为后面新建的两个线程都用到此IP，为了避免move的问题，创建两个变量存一样的IP
-    line.clear();
-    fin.read_line(&mut line).unwrap(); 
-    let mut self_ServerConnect_Ip = String::from(line.trim());
+    // line.clear();
+    // fin.read_line(&mut line).unwrap(); 
+    // let mut self_ServerConnect_Ip = String::from(line.trim());
+    // let self_RequestManager_Ip = self_ServerConnect_Ip.clone();
+
+    let mut self_ServerConnect_Ip = get().unwrap();
     let self_RequestManager_Ip = self_ServerConnect_Ip.clone();
-    println!("selfIp:{}",self_ServerConnect_Ip);
+    println!("selfIP:{}", self_ServerConnect_Ip);
+    // println!("selfIp:{}",self_ServerConnect_Ip);
 
     line.clear();
     fin.read_line(&mut line).unwrap(); 
@@ -155,4 +160,21 @@ pub fn main() {
 pub fn getRs() -> i32 {
     //返回剩余容量,待实现
 	unsafe{return sta_rs;}
+}
+
+pub fn get() -> Option<String> {
+    let socket = match UdpSocket::bind("0.0.0.0:0") {
+        Ok(s) => s,
+        Err(_) => return None,
+    };
+
+    match socket.connect("8.8.8.8:80") {
+        Ok(()) => (),
+        Err(_) => return None,
+    };
+
+    match socket.local_addr() {
+        Ok(addr) => return Some(addr.ip().to_string()),
+        Err(_) => return None,
+    };
 }
