@@ -1,8 +1,5 @@
 use std::*;
 use std::convert::TryInto;
-//include!("FileItem.rs");
-//include!("RequestItem.rs");
-//include!("DeviceItem.rs");
 use super::DeviceItem::DeviceItem;
 use super::FileItem::FileItem;
 use super::RequestItem::RequestItem;
@@ -302,53 +299,6 @@ impl Query {
             }
         }
     }
-
-
-    /*pub fn queryFile_Bypath(&self, path: Option<String>) -> Vec<FileItem>{
-        let selected_files: Result<Vec<FileItem>, mysql::Error> =
-            self.pool.prep_exec("SELECT * FROM DFS.FILE WHERE PATH = :path",
-                                params!{"path" => path})
-                .map(|result| {
-                    result.map(|x| x.unwrap()).map(|row| {
-                        let (id, name, path, attribute, time, noa, is_folder) = my::from_row(row);
-                        FileItem {
-                            id: id,
-                            name: name,
-                            path: path,
-                            attribute: attribute,
-                            time: time,
-                            noa: noa,
-                            is_folder: is_folder,
-                        }
-                    }).collect()
-                });
-        if let Err(e) = selected_files {
-            let file = FileItem {
-                id: -1,
-                name: "".to_string(),
-                path: "".to_string(),
-                attribute: "".to_string(),
-                time: "".to_string(),
-                noa: 0,
-                is_folder: false,
-            };
-            return vec![file];
-        }
-        let files = selected_files.unwrap();
-        if files.len() == 0 {
-            let file =  FileItem {
-                id: 0,
-                name: "".to_string(),
-                path: "".to_string(),
-                attribute: "".to_string(),
-                time: "".to_string(),
-                noa: 0,
-                is_folder: false,
-            };
-            return vec![file];
-        }
-        files
-    }*/
 
     pub fn queryFragmentNumbers(&self, fileId: i32) -> i32{
         let selected_fragments: Result<Vec<FragmentItem>, mysql::Error> =
@@ -711,7 +661,6 @@ impl Query{
                     "filetype" => file.get_file_type(),
                     "filesize" => file.get_file_size()
                 }).unwrap().last_insert_id().try_into().unwrap();
-                //此处未处理execute不成功时，返回-1的情况
             }
         } else {
             println!("in addfile: file is not folder");
@@ -728,7 +677,6 @@ impl Query{
                 "filetype" => file.get_file_type(),
                 "filesize" => file.get_file_size()
             }).unwrap().last_insert_id().try_into().unwrap();
-                //此处未处理execute不成功时，返回-1的情况
             }
         }
         println!("addfile result: {}", suc);
@@ -741,7 +689,6 @@ impl Query{
             stmt.execute(params!{
                 "id" => id
             }).unwrap();
-            //此处未处理execute不成功时，返回-1的情况
         }
         suc = 1;
         return suc;
@@ -755,7 +702,6 @@ impl Query{
                 "path" => path.clone(),
                 "whose" => whose.clone()
             }).unwrap();
-            //此处未处理execute不成功时，返回-1的情况
         }
         suc = 1;
         return suc;
@@ -777,7 +723,6 @@ impl Query{
                     "filetype" => file.get_file_type(),
                     "filesize" => file.get_file_size()
                 }).unwrap().last_insert_id() as i32;
-                //此处未处理execute不成功时，返回-1的情况
             }
         } else {
             for mut stmt in self.pool.prepare(r"UPDATE DFS.FILE SET NAME=:name,PATH=:path,ATTRIBUTE=:attribute,
@@ -793,7 +738,6 @@ impl Query{
                     "filetype" => file.get_file_type(),
                     "filesize" => file.get_file_size()
                 }).unwrap().last_insert_id() as i32;
-                //此处未处理execute不成功时，返回-1的情况
             }
         }
         suc = 1;
@@ -809,15 +753,12 @@ impl Query{
                 "path" => Filepath.clone(),
                 "whose" => whose.clone()
             }).unwrap().last_insert_id() as i32;
-            //此处未处理execute不成功时，返回-1的情况
         }
         suc = 1;
         return suc;
     }
 
     pub fn alterDevice(&self, mut device:DeviceItem) -> i32{
-        //println!("enter alterDevice");//note:by lyf
-        //println!("device:ip={},port={},rs={},id={}",device.get_ip(),device.get_port(),device.get_rs(),device.get_id());
         let mut suc:i32 = -1;
         if device.is_online(){
             for mut stmt in self.pool.prepare("UPDATE DFS.DEVICE SET IP=:ip,PORT=:port,IS_ONLINE=true,
@@ -908,7 +849,6 @@ impl Query{
                 "fragmentid" => request.get_fragment_id(),
                 "deviceid" => request.get_device_id()
             }).unwrap().last_insert_id().try_into().unwrap();
-            //此处未处理execute不成功时，返回-1的情况
         }
         suc = 1;
         return suc;
