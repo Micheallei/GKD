@@ -21,7 +21,6 @@ impl ClientThread{
     }
 
     fn readsentence(&mut self, sentence:&String) -> i32{
-        //println!("control Connect - ClientThread :sentence:{}",sentence);
         let mut first_char = sentence.chars().next();
         match first_char {
             None => return 0,
@@ -35,13 +34,9 @@ impl ClientThread{
                         self.client_socket.flush();
                         return 0;
                     }
-                    //println!("controlconnect--clientthread--准备修改device");
                     let client_addr = self.client_socket.peer_addr().unwrap();
-                    //let port = client_addr.port();
                     let rs: i32 = s[2].trim().parse().unwrap();
-                    //let ip = client_addr.ip();
 
-                    //println!("controlconnect--queryDevice所用的id：{}",id);
                     let query = Query::new();
                     let mut deviceitem = query.queryDevice(id);
                     if deviceitem.get_id() == -1 {
@@ -50,18 +45,14 @@ impl ClientThread{
                     }
                     deviceitem.set_leftrs(rs - deviceitem.rs + deviceitem.leftrs);
                     self.client_id = id;
-                    //deviceitem.set_ip(ip.to_string());
-                    //deviceitem.set_port(port.try_into().unwrap());
                     deviceitem.set_is_online(true);
                     deviceitem.set_rs(rs);
                     if query.alterDevice(deviceitem) == -1 {
                         println!("alterDevice fail");
                     }
 
-                    //println!("controlconnect--queryrequestnumber_byid所用id:{}",id);
                     self.client_socket.write_fmt(format_args!("received with {} unread request!\n", query.queryRequestNumbers_Byid(id)));
                     self.client_socket.flush();
-                    //query.closeConnection();
 			        return 1
                 }
                 else if c == '2'{
@@ -75,7 +66,6 @@ impl ClientThread{
                     }
                     let query = Query::new();
                     let mut request = query.queryFirstRequest_Byid(id);
-                    //query.closeConnection();
                     println!("{} {} {}\n", 
                         request.get_id(), request.get_fragment_id(), request.get_type());
                     self.client_socket.write_fmt(format_args!("{} {} {}\n", 
@@ -98,7 +88,6 @@ impl ClientThread{
                     let query = Query::new();
                     let mut deviceitem = query.queryDevice(id);
                     if deviceitem.get_id() == -1 {
-                        // 不允许通过报文新建client
                         println!("No such device ID!");
                         return 0;
                     } else {
@@ -119,41 +108,11 @@ impl ClientThread{
         0
     }
 
-    /*pub fn run(&mut self){
-        //println!("start!");
-        self.client_socket.set_read_timeout(Some(Duration::new(60, 0))).expect("set_read_timeout call failed");
-        self.client_socket.set_write_timeout(Some(Duration::new(60, 0))).expect("set_read_timeout call failed");
-        let stream_clone = self.client_socket.try_clone().expect("clone failed...");
-        let mut in_from_client = BufReader::new(stream_clone);
-        //println!("control Connect - ClientThread :before loop!/n");
-        loop{
-            let mut sentence = String::new();
-            sentence.clear();
-            in_from_client.read_line(&mut sentence).unwrap();
-            //println!("control Connect - ClientThread ：after read line!\n");
-            if self.readsentence(&sentence) == 0 {
-                break;
-                //println!("control Connect - ClientThread ：sentence：{}，break\n",sentence);
-            }
-            println!("C-RECV: {}", sentence);
-        }
-        if self.client_id != -1 {
-            /*let query = database::Query::new();
-            let deviceitem = query.queryDevice(client_id);
-            deviceitem.setIsOnline(false);
-			query.alterDevice(deviceitem);
-			query.closeConnection();*/
-        }
-        println!("C-client thread ended");
-    }*/
-
     pub fn run(&mut self){
-        //println!("start!");
         self.client_socket.set_read_timeout(Some(Duration::new(60, 0))).expect("set_read_timeout call failed");
         self.client_socket.set_write_timeout(Some(Duration::new(60, 0))).expect("set_read_timeout call failed");
         let stream_clone = self.client_socket.try_clone().expect("clone failed...");
         let mut in_from_client = BufReader::new(stream_clone);
-        //println!("control Connect - ClientThread :before loop!/n");
         loop{
             let mut sentence = String::new();
             sentence.clear();
@@ -162,11 +121,8 @@ impl ClientThread{
                 println!("client break down");
                 break;
             }
-            //println!("control Connect - ClientThread ：after read line!\n");
             if self.readsentence(&sentence) == 0 {
-                //println!("control Connect - ClientThread ：sentence：{}，break\n",sentence);
                 break;
-                //println!("control Connect - ClientThread ：sentence：{}，break\n",sentence);
             }
             println!("C-RECV: {}", sentence);
         }
@@ -175,7 +131,6 @@ impl ClientThread{
             let mut deviceitem = query.queryDevice(self.client_id);
             deviceitem.set_is_online(false);
             query.alterDevice(deviceitem);
-            //query.closeConnection();
         }
         println!("C-client thread ended");
     }
