@@ -71,31 +71,6 @@ pub fn main() {
     unsafe{println!("rs:{}\n",sta_rs);}
     //setup 返回
 
-    /*dontpanic组中代码无此部分
-    line.clear();
-    fin.read_line(&mut line).unwrap(); 
-    let mut tmpFragmentFolder = String::from(line.trim());
-    */
-    /*dontpanic注释了关于uploadFolder的部分，其作为client的成员变量，可能会有其他代码调用然后赋值
-    line.clear();
-    fin.read_line(&mut line).unwrap(); 
-    let i = line.trim().parse::<i32>().unwrap(); //需监控的上传文件夹数量
-
-
-    let mut j = i;
-    while j>0 {
-        line.clear();
-        fin.read_line(&mut line).unwrap(); 
-        let uploadFolder = PathBuf::from(line.trim());
-        uploadFolders.push(uploadFolder);
-
-        line.clear();
-        fin.read_line(&mut line).unwrap(); 
-        let uploadAddr = String::from(line.trim());
-        uploadAddrs.push(uploadAddr);
-        j-=1;
-    }
-    */
     crate::client::connect::ServerConnecter::ServerConnecter::init(&serverIp,&(serverControlPort as u16));
     let mut file1 = PathBuf::from(&fragmentFolder);
     if !file1.exists() || !file1.is_dir(){
@@ -110,12 +85,6 @@ pub fn main() {
         return;
     }
 
-    //crate::client::fileDetector::FolderScanner::FolderScanner::init(&file2);
-    //crate::client::fileDetector::FolderScanner::FolderScanner::init(&tmpFragmentFolder);
-    //crate::client::fileDetector::FileUploader::FileUploader::init(&file2,&serverIp,&(dataPort as u16)); //note:(by lyf) 类型转换
-    //crate::client::fileDetector::FileUploader::FileUploader::init(&tmpFragmentFolder,&serverIp,&(dataPort as u16)); //note:(by lyf) 类型转换
-    //note:by lyf  由于全局变量pathbuf类型难以实现，故传String
-
     //线程创建
     let status = Arc::new((Mutex::new(0), Condvar::new()));
     let connect_status = status.clone();
@@ -128,11 +97,6 @@ pub fn main() {
         ServerConnecter.run(connect_status);
      });//let mut num = counter.lock().unwrap(); *num += 1;
     
-     /*dontpanic无此代码
-    let handle2 = thread::spawn(move || {
-    let folderScanner = crate::client::fileDetector::FolderScanner::FolderScanner::new(uploadFolders,uploadAddrs);
-    folderScanner.run(fileDetector_status);
-    });*/
 
     let handle2 = thread::spawn(move || { //note by lyf:requestManager声明为mut是因为websocket需要一个mut
         let mut requestManager = crate::client::connect::RequestManager::RequestManager::new(selfDataPort,self_RequestManager_Ip);
@@ -141,7 +105,7 @@ pub fn main() {
 
     let &(ref lock, ref cvar) = &*status;
     let mut status_cur = lock.lock().unwrap();
-    while *status_cur==0 {//状态码未被改变时，则继续wait
+    while *status_cur==0 {  //状态码未被改变时，则继续wait
         println!("before wait");
         status_cur = cvar.wait(status_cur).unwrap();
         println!("after wait");

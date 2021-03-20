@@ -86,28 +86,7 @@ pub fn send_file(mut f: File, mut soc_out: &TcpStream)->bool{
     }
 
     soc_out.write(&mut send_bytes[0..len as usize]);
-    // loop {
-    //     let readlen = f.read(&mut send_bytes[..]);
-    //     let len: i32 = match readlen{
-    //         Err(e) => -1,
-    //         Ok(len) => len as i32,
-    //     };
-        
-    //     if len == -1 {
-    //         return false;
-    //     }
-    //     if len == 0 {
-    //         break;
-    //     }
-    //     soc_out.write(&mut send_bytes[0..length as usize]);
-    //     //let eof = [-1;1];
-    //     //soc_out.write(&eof);
-    //     soc_out.flush();
-    //     println!("send_bytes:");
-    //     // for i in 0..length as usize{
-    //     //     println!("{}",send_bytes[i]);
-    //     // }
-    // }
+
      println!("end connect-send_file");
     return true
 }

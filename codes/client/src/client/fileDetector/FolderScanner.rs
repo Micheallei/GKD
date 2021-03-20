@@ -5,7 +5,6 @@ use std::collections::linked_list::LinkedList;
 use std::time::Instant; // timer
 
 use super::FileUtil::FileUtil;
-//use crate::client::client::SynItem::SynItem;
 use super::FileUploader::FileUploader;
 use super::FileAttrs;
 use crate::client::com;

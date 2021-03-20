@@ -22,19 +22,9 @@ use std::convert::TryInto;
          * @param folderPath 文件夹路径
          */
     
-        /*由于直接用了path写，所以这段没改写
-        public static void clearFolder(String folderPath) {
-            clearFolder(new File(folderPath));
-        }*/
+
 
         // note:因为无法重载，故函数名加上了_str
-        /*pub fn clearFolder_str(&self,folderPath:String) {
-             self.clearFolder(folderPath.try_into().unwrap());
-         }*/
-         //note:by lyf string到pathbuf的类型转换尚未实现，但无人调用此方法
-    
-        /*先用 struct std::path::Path 写，没找到如何从 
-        struct::fs::File 得到对应 path 的方法*/ 
         pub fn new() -> FileUtil{
             FileUtil{
 

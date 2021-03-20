@@ -5,7 +5,7 @@ use std::io::prelude::*;
 use std::{thread, time};
 use std::sync::{Arc, Mutex, Condvar};
 use std::convert::TryInto;
-//#[derive(Debug)]
+
 pub struct ServerConnecter{
     server_ip:String,
     control_port:u16,
@@ -13,7 +13,6 @@ pub struct ServerConnecter{
     connecting:bool,
     selfIp:String,
     selfDataPort:i32,
-    //private client.SynItem syn;
     to_server:Option<TcpStream>,
 }
 
@@ -90,32 +89,6 @@ impl ServerConnecter{
                         println!("serverconnecter -- input_buf:{}\n",input_buf);
                         let mut input_vec:Vec<&str>= input_buf[..].split(' ').collect();
 
-                        //debug
-                        //println!("input is: {}\n", input_buf);
-                        /* dontpanic删除
-                        let mut unread_request:i32 = input_vec[2].trim().parse().unwrap();
-                        
-                        //println!("after input_vec[2]\n");//note:by lyf
-
-                        let mut inputline = String::new();
-                        while unread_request>0 {
-                            println!("!!enter loop");
-                            println!("unread request: {}\n", unread_request);
-                            socket.write_fmt(format_args!("2 {}\n", self.client_id.to_string()));
-                            socket.flush();
-                            inputline.clear();
-                            in_from_server.read_line(&mut inputline).unwrap();
-                            let inputline = inputline.trim();
-                            let mut input_vec:Vec<&str>= inputline[..].split(' ').collect();
-                            let request_id:u32 = input_vec[0].parse().unwrap();
-                            let fragment_id:u32 = input_vec[1].parse().unwrap();
-                            let ftype:u32 = input_vec[2].trim().parse().unwrap();
-                            //以下两行用到其他文件中定义的结构体
-                            let mut f_manager = super::FragmentManager::FragmentManager::new(request_id.try_into().unwrap(), fragment_id.try_into().unwrap(), ftype.try_into().unwrap());
-                            f_manager.submit();
-                            unread_request = unread_request - 1;
-                        }
-                        */
                         //sleep
                         let five_seconds = time::Duration::new(5, 0);
                         thread::sleep(five_seconds);
