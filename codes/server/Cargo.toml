@@ -1,5 +1,5 @@
 [package]
-name = "client_test"
+name = "server_test"
 version = "0.1.0"
 authors = ["lyf-00 <55793884+lyf-00@users.noreply.github.com>"]
 edition = "2018"

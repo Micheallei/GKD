@@ -170,15 +170,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "client_test"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "mysql",
- "rand 0.6.5",
-]
-
-[[package]]
 name = "cloudabi"
 version = "0.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1018,6 +1009,15 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
+]
+
+[[package]]
+name = "server_test"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "mysql",
+ "rand 0.6.5",
 ]
 
 [[package]]
