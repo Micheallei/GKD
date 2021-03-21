@@ -24,8 +24,15 @@ pub fn main() {
     //read setup.ini 
     let mut serverControlPort:i32 = 0;
         
-    let setUpFile = String::from(".\\setup.ini");
-    let file = File::open(setUpFile).unwrap();
+    let setUpFile = String::from("E://STUDY//GKD//GKD//codes//client//target//debug//setup.ini");
+    // let setUpFile = String::from(".\setup.ini");
+    let file = match File::open(setUpFile){
+        Ok(T) => T,
+        Err(E) => {
+            error!("can not open setup.ini");
+            return;
+        }
+    };
     println!("open setup.ini successfully!");
 
     let mut fin = BufReader::new(file);
@@ -78,6 +85,7 @@ pub fn main() {
     let mut file1 = PathBuf::from(&fragmentFolder);
     if !file1.exists() || !file1.is_dir(){
         println!("file1 wrong");
+        error!("file 1 wrong");
         return;
     }
 
@@ -85,6 +93,7 @@ pub fn main() {
     let mut file2 = PathBuf::from(&fragmentFolder);
     if !file2.exists() || !file2.is_dir(){
         println!("file2 wrong");
+        error!("file 2 wrong");
         return;
     }
 

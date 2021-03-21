@@ -8,6 +8,8 @@ use std::fs;
 use std::fs::File;
 use std::io;
 use std::io::prelude::*;
+use log::{info,warn,debug,error,trace};
+use log4rs;
 
 use websocket::{Message, OwnedMessage};
 use websocket::client::ClientBuilder;
@@ -46,6 +48,7 @@ impl WebSocket{
    
         let client = request.use_protocol("websocket").accept().unwrap();
         println!("accept a connection");
+        info!("accpet a new websocket connection");
         let result:Option<WebSocket> = Some(WebSocket{
             client:client
         });

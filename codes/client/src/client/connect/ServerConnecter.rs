@@ -5,6 +5,8 @@ use std::io::prelude::*;
 use std::{thread, time};
 use std::sync::{Arc, Mutex, Condvar};
 use std::convert::TryInto;
+use log::{info,warn,debug,error,trace};
+use log4rs;
 
 pub struct ServerConnecter{
     server_ip:String,
@@ -50,6 +52,7 @@ impl ServerConnecter{
 
         let mut status = true;
         println!("SeverConnecter run!\n"); //note:by lyf
+        info!("SeverConnecter run\n");
         while self.connecting{
             //println!("server_ip:{},control_port:{}",self.server_ip,self.control_port);//note:by lyf
             if let Ok(connect_socket) = TcpStream::connect((&self.server_ip[..], self.control_port)) {

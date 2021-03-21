@@ -4,6 +4,8 @@ use std::thread;
 use websocket::sync::Server;
 use crate::client::connect::FragmentManager::FragmentManager;
 use std::sync::{Arc, Mutex, Condvar};
+use log::{info,warn,debug,error,trace};
+use log4rs;
 
 pub struct RequestManager {
     self_data_port: i32,
@@ -27,6 +29,7 @@ impl RequestManager {
     pub fn run(&mut self,status1:Arc<(Mutex<i32>,Condvar)>) { 
         //TODO:需要锁机制
         println!("WebSocket Server has started on {} :{}.\r\nWaiting for a connection...", self.self_ip, self.self_data_port);
+        info!("WebSocket Server has started on {} :{}.\r\nWaiting for a connection...", self.self_ip, self.self_data_port);
         while(true) {
             let user: WebSocket = WebSocket::new(&mut self.server).unwrap();  //note by lyf:由于websocket解决move时使用了mut，故此处传可变引用
             println!("A user connected.");

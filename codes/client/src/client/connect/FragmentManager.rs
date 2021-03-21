@@ -14,6 +14,8 @@ use websocket::OwnedMessage;
 use std::fs;
 use crate::client::WebSocket::WebSocket::WebSocket;
 
+use log::{info,warn,debug,error,trace};
+use log4rs;
 
 //note:by lyf
 static mut sta_fragmentFolder:String = String::new();
@@ -49,6 +51,7 @@ impl FragmentManager {
     pub fn run(&mut self){
         // 暂不进行并发数据操作
         //websocket的recv（）返回byte[]，这里可能有bug
+        info!("Start a new RequestManager ");
 			let msg:String = match self.user.recv(){
                 OwnedMessage::Text(data) => data,
                 _ => String::from("dismatch")
@@ -86,10 +89,6 @@ impl FragmentManager {
 
 		//dontpanic：init参数改变
     pub fn init(f : &PathBuf) {
-        //note:by lyf
-        /*self.fragmentFolder = f;
-        self.serverIP = ip;
-        self.serverPort = port;*/
         unsafe{
         sta_fragmentFolder = (*f).to_str().unwrap().to_string();
         }

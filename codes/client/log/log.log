@@ -9,3 +9,22 @@
 [2021-03-20 11:15:22] INFO {client_test::client::client::client line 20} client start
 [2021-03-20 11:15:32] INFO {client_test line 11} INFO:first log information
 [2021-03-20 11:15:32] INFO {client_test::client::client::client line 20} client start
+[2021-03-21 15:20:29] INFO {client_test line 11} INFO:first log information
+[2021-03-21 15:20:29] INFO {client_test::client::client::client line 20} client start
+[2021-03-21 15:28:05] INFO {client_test line 11} INFO:first log information
+[2021-03-21 15:28:05] INFO {client_test::client::client::client line 20} client start
+[2021-03-21 15:28:05] ERROR {client_test::client::client::client line 32} can not open setup.ini
+[2021-03-21 15:30:38] INFO {client_test line 11} INFO:first log information
+[2021-03-21 15:30:38] INFO {client_test::client::client::client line 20} client start
+[2021-03-21 15:30:38] ERROR {client_test::client::client::client line 32} can not open setup.ini
+[2021-03-21 15:31:31] INFO {client_test line 11} INFO:first log information
+[2021-03-21 15:31:31] INFO {client_test::client::client::client line 20} client start
+[2021-03-21 15:36:10] INFO {client_test line 11} INFO:first log information
+[2021-03-21 15:36:10] INFO {client_test::client::client::client line 20} client start
+[2021-03-21 15:36:10] ERROR {client_test::client::client::client line 88} file 1 wrong
+[2021-03-21 15:36:34] INFO {client_test line 11} INFO:first log information
+[2021-03-21 15:36:34] INFO {client_test::client::client::client line 20} client start
+[2021-03-21 15:36:34] ERROR {client_test::client::client::client line 88} file 1 wrong
+[2021-03-21 15:52:55] INFO {client_test line 11} INFO:first log information
+[2021-03-21 15:52:55] INFO {client_test::client::client::client line 20} client start
+[2021-03-21 15:52:55] ERROR {client_test::client::client::client line 88} file 1 wrong
