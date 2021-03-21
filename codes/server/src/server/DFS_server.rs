@@ -25,17 +25,10 @@ impl DFS_server {
         thread::spawn( move ||{
             con_t.run();
         });
-
-        /*dontpanic删除
-        let data_port:String = String::from("127.0.0.1:6668");
-        let data_t = super::dataConnect::ServerThread::ServerThread::new(data_port);
-        thread::spawn( move ||{
-            data_t.run();
-        });
-        */
         loop {
 
         }
         println!("DFS_server end");
+        info!("DFS_server end");
     }
 }

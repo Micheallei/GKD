@@ -4,6 +4,8 @@ use std::io::BufRead;
 use std::io::prelude::*;
 use std::convert::TryInto;
 use std::time::Duration;
+use log::{info,warn,debug,error,trace};
+use log4rs;
 
 use super::super::database::Query::Query;
 
@@ -40,7 +42,8 @@ impl ClientThread{
                     let query = Query::new();
                     let mut deviceitem = query.queryDevice(id);
                     if deviceitem.get_id() == -1 {
-                        println!("No such device ID!");
+                        //println!("No such device ID!");
+                        error!("No Device ID");
                         return 0;
                     }
                     deviceitem.set_leftrs(rs - deviceitem.rs + deviceitem.leftrs);
@@ -48,7 +51,8 @@ impl ClientThread{
                     deviceitem.set_is_online(true);
                     deviceitem.set_rs(rs);
                     if query.alterDevice(deviceitem) == -1 {
-                        println!("alterDevice fail");
+                        //println!("alterDevice fail");
+                        warn!("alterDevice fail");
                     }
 
                     self.client_socket.write_fmt(format_args!("received with {} unread request!\n", query.queryRequestNumbers_Byid(id)));
@@ -88,7 +92,8 @@ impl ClientThread{
                     let query = Query::new();
                     let mut deviceitem = query.queryDevice(id);
                     if deviceitem.get_id() == -1 {
-                        println!("No such device ID!");
+                        //println!("No such device ID!");
+                        error!("No such device ID!");
                         return 0;
                     } else {
                         self.client_id = id;
@@ -134,6 +139,4 @@ impl ClientThread{
         }
         println!("C-client thread ended");
     }
-
-
 }

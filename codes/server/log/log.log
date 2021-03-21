@@ -1,1 +1,7 @@
 [2021-03-20 11:20:21] INFO {client_test::server::DFS_server line 13} server start
+[2021-03-20 11:48:10] INFO {server_test::server::DFS_server line 13} server start
+[2021-03-20 11:53:40] INFO {server_test::server::DFS_server line 13} server start
+[2021-03-21 15:28:15] INFO {server_test::server::DFS_server line 13} server start
+[2021-03-21 15:28:15] INFO {server_test::server::controlConnect::ServerThread line 16} control socket setup!
+[2021-03-21 16:10:58] INFO {server_test::server::DFS_server line 13} server start
+[2021-03-21 16:10:58] INFO {server_test::server::controlConnect::ServerThread line 16} control socket setup!

@@ -37,7 +37,7 @@ pub struct Query{
 impl Query {
     pub fn new() -> Query{
         //需要大家在自己的电脑把 root:XXXX 改成自己的 mysql 密码
-        let pool = my::Pool::new("mysql://root:201314@localhost:3306/mysql").unwrap();
+        let pool = my::Pool::new("mysql://root:mysql@localhost:3306/mysql").unwrap();
         Query {
             pool: pool,
         }
@@ -645,9 +645,9 @@ impl Query {
 impl Query{
     pub fn addFile(&self, mut file:FileItem) -> i32{
         let mut suc:i32 = -1;
-        println!("execute query.addfile");
+        //println!("execute query.addfile");
         if file.is_folder(){
-            println!("in addfile: file is folder");
+            //println!("in addfile: file is folder");
             for mut stmt in self.pool.prepare(r"INSERT INTO DFS.FILE (NAME,PATH,ATTRIBUTE,TIME,NOD,NOA,IS_FOLDER,WHOSE,FILE_TYPE,FILE_SIZE)
                 VALUES (:name,:path,:attribute,:time,:nod,:noa,true,:whose,:filetype,:filesize);").into_iter() {
                 suc = stmt.execute(params!{
@@ -663,7 +663,7 @@ impl Query{
                 }).unwrap().last_insert_id().try_into().unwrap();
             }
         } else {
-            println!("in addfile: file is not folder");
+            //println!("in addfile: file is not folder");
             for mut stmt in self.pool.prepare(r"INSERT INTO DFS.FILE (NAME,PATH,ATTRIBUTE,TIME,NOD,NOA,IS_FOLDER,WHOSE,FILE_TYPE,FILE_SIZE)
             VALUES (:name,:path,:attribute,:time,:nod,:noa,false,:whose,:filetype,:filesize);").into_iter() {
             suc = stmt.execute(params!{
@@ -679,7 +679,6 @@ impl Query{
             }).unwrap().last_insert_id().try_into().unwrap();
             }
         }
-        println!("addfile result: {}", suc);
         return suc;
     }
 
@@ -855,7 +854,6 @@ impl Query{
     }
 
     pub fn deleteRequest(&self,id:i32) -> i32{
-        println!("enter delete request");
         let mut suc:i32 = -1;
         for mut stmt in self.pool.prepare(r"DELETE FROM DFS.REQUEST WHERE ID=:id").into_iter() {
             let res = stmt.execute(params!{
