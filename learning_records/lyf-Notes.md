@@ -492,3 +492,79 @@ fn main() {
 - 服务器负责从客户端收集碎片，解码后直接发给浏览器？download
   - 浏览器端编解码负担重时，如何传递此消息？
 
+### 性能测试调研
+
+**ceph 性能测试指标**
+
+ceph结构：https://cloud.tencent.com/developer/news/275070
+
+![](https://img-blog.csdnimg.cn/20200718144317404.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2N5cTYyMzkwNzU=,size_16,color_FFFFFF,t_70)
+
+![](C:\Users\12935\Pictures\Screenshots\ceph结构.jpeg)
+
+原文：https://developer.aliyun.com/article/559261
+
+1. 磁盘性能测试
+   - 测试磁盘写吞吐量：使用dd命令测试不同node
+   - 测试磁盘写延迟：dd命令测不同结点
+   - 集群网络 I/O 测试：rgw到osd.0（不同结点） 测试网络IO 
+2. rados 集群性能测试
+   - 准备：查看 osd 分布，创建 test pool
+   - 写性能测试：
+   - 读性能测试：
+
+测试工具：
+
+fio/dd命令 测试磁盘速度 rados bench / rados load-gen / rbd bench-write ceph自带的性能测试工具
+
+ceph 自带的性能测试工具：https://blog.csdn.net/don_chiang709/article/details/92665872
+
+**分布式存储性能测试指标**
+
+[参考文章](http://www.360doc.com/content/16/0706/09/478627_573462703.shtml#:~:text=%E4%B8%80%EF%BC%8C%E4%BD%A0%E5%BE%97,%E6%98%AF%E7%A8%B3%E5%AE%9A%E7%9A%84%E3%80%82)
+
+注意事项：
+
+1）不能使用平均值（存疑？平均值+方差）
+
+2）响应时间没有和吞吐量TPS/QPS挂钩。而只是测试了低速率的情况，这是完全错误的。-> 测试不同吞吐量下的响应时间
+
+3）响应时间和吞吐量没有和成功率挂钩。-> **同时测：响应时间、吞吐量、成功率**
+
+正确做法：
+
+1. 最为正确的统计做法是用百分比分布统计。也就是英文中的TP – Top Percentile ，TP50的意思在，50%的请求都小于某个值，TP90表示90%的请求小于某个时间。（多次测试）
+
+2. 吞吐量的值必需有响应时间来卡。
+
+怎么做？：
+
+1. 你得定义一个系统的响应时间latency，建议是TP99，以及成功率。比如路透的定义：99.9%的响应时间必需在1ms之内，平均响应时间在1ms以内，100%的请求成功。
+
+2. 在这个响应时间的限制下，找到最高的吞吐量。测试用的数据，需要有大中小各种尺寸的数据，并可以混合。最好使用生产线上的测试数据。
+
+3. 在这个吞吐量做Soak Test，比如：使用第二步测试得到的吞吐量连续7天的不间断的压测系统。然后收集CPU，内存，硬盘/网络IO，等指标，查看系统是否稳定，比如，CPU是平稳的，内存使用也是平稳的。那么，这个值就是系统的性能。
+4. 找到系统的极限值。比如：在成功率100%的情况下（不考虑响应时间的长短），系统能坚持10分钟的吞吐量。
+5. 做Burst Test。用第二步得到的吞吐量执行5分钟，然后在第四步得到的极限值执行1分钟，再回到第二步的吞吐量执行5钟，再到第四步的权限值执行1分钟，如此往复个一段时间，比如2天。收集系统数据：CPU、内存、硬盘/网络IO等，观察他们的曲线，以及相应的响应时间，确保系统是稳定的。
+
+**GFS 论文性能测试**
+
+[论文链接](https://static.googleusercontent.com/media/research.google.com/zh-CN//archive/gfs-sosp2003.pdf)
+
+比较有价值的是以下部分：
+
+1. 说明测试环境：
+
+   - 机器数目：1 master,2 master replicas, 16 chunkserver, 16 client 
+   - 机器硬件参数：eg.CPU memory disk
+   - 网络参数：以太网连接参数，switch连接状况，switch连接到的link的带宽
+
+2. Reads
+
+   每个client同时从FS读 256 * 4MB = 1GB 数据
+
+3. Writes
+
+   每个client同时写16个不同文件。每个写1GB数据
+
+   ![image-20210321215846843](C:\Users\12935\AppData\Roaming\Typora\typora-user-images\image-20210321215846843.png)
