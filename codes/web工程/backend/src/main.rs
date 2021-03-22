@@ -81,7 +81,8 @@ pub struct Fileuploader_param{
     fileType: String,
     nod: i32,
     noa: i32,
-    fileSize: i32,   
+    fileSize: i32, 
+    fileblocks:i32,  
     whose: String,
     //fileId: i32,
     //fragmentFolderPath:PathBuf,
@@ -213,6 +214,7 @@ async fn uploadregister(params: web::Json<Fileuploader_param>) -> web::Json<File
         devices: json!({"1":1}),//serde_json::from_str(device_str).unwrap(),//?用空字符串来初始化
         fileType: params.fileType.clone(),
         fileSize: params.fileSize.clone(),
+        fileblocks: params.fileblocks.clone(),
         noa: params.noa.clone(),
         nod: params.nod.clone(),
         whose: params.whose.clone(),

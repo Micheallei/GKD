@@ -97,9 +97,12 @@ function decodeFile(fileName,fileType,nod,noa,content,digest,fileSize)
 		console.log(digest[i]);
 	}
 }*/
-function decodeFile(fileName, fileType, numOfDivision, numOfAppend, content, digest, fileSize) {
+function decodeFile(fileName, fileType, numOfDivision, numOfAppend, content, digest, fileSize,file_blocks) {
 	//clean wrong parts
 	var errors = 0;
+	var queue=[];//分块任务队列
+	var blocksize=1024*1024;//每个文件块<1MB
+	var decoded=[];
 	/*
 	for (var i = 0; i < content.length; i++) {
 		if (digest[i] != objectHash.MD5(content[i])) {
@@ -109,18 +112,36 @@ function decodeFile(fileName, fileType, numOfDivision, numOfAppend, content, dig
 	}*/
 
 	//console.log(content);
-	const t5 = Date.now();//Decode timing start
+	//const t5 = Date.now();//Decode timing start
 
 	var contentView=new Array(content.length);
 	for(var i=0;i<content.length;i++){
 		contentView[i]=new Uint8Array(content[i]);//对文件碎片内容格式转换，以便在Go中运行
 	}
 	//var decoded = erasure.recombine(contentView, fileSize, numOfDivision, numOfAppend);
-	var decoded = callDecoder(contentView, numOfDivision, numOfAppend);
-	//console.log(decoded);
-	if (decoded.length > fileSize)
-		decoded = decoded.subarray(0, fileSize);
-	const t6 = Date.now();//Decode timing end
+	for(i=0;i<file_blocks;i++){
+		queue.push(new Promise(function (resolve, reject) {
+			//console.log(i);
+			var result = callDecoder(contentView.slice(i*blocksize,(i+1)*blocksize), Math.round(numOfDivision/file_blocks), Math.round(numOfAppend/file_blocks));
+			if(i < file_blocks-1){
+				if (result.length > blocksize){
+					result = result.subarray(0, fileSize);
+				}
+			}
+			else if(result.length > contentView.length-i*blocksize){
+				result = result.subarray(0, contentView.length-i*blocksize);
+			}
+			resolve(result);
+		}));
+	}
+	Promise.all(queue).then(function (results) {
+		//console.log(results); // 获得一个Array: ['P1', 'P2']
+		for(i=0;i<results.length;i++){
+			decoded.push.apply(decoded,results[i]);
+		}
+	});
+	
+	//const t6 = Date.now();//Decode timing end
 
 	// after decoded, download the file and show info(time, errors)
 	createAndDownloadFile(fileName, fileType, decoded);
@@ -207,6 +228,9 @@ function encodeFile(selectedFile) {
 		if (document.getElementById("decode") != null)
 			document.getElementById("decode").innerHTML = "";*/
 		let raw = new Uint8Array(fileString);
+		var queue=[];//分块任务队列
+		var blocksize=1024*1024;//每个文件块<1MB
+		var file_blocks = Math.ceil(raw.length/(blocksize));//文件分了多少块
 		/*if (document.getElementById("info") != null)
 			document.getElementById("info").innerHTML +=
 				"<h3>file name</h3> " + fileName
@@ -226,21 +250,46 @@ function encodeFile(selectedFile) {
 			alert("waiting for worker");
 			console.log(e.data);*/
 			/*fileEncoder*/
-			const t1 = Date.now();//Encode timing start
+			file_blocks =Math.ceil(raw.length/(blocksize));
+			for(i=0;i<file_blocks;i++){
+				queue.push(new Promise(function (resolve, reject) {
+					//console.log(i);
+					var result=callEncoder(raw.slice(i*blocksize,(i+1)*blocksize),numOfDivision,numOfAppend);
+					resolve(result);
+				}));
+			}
+			Promise.all(queue).then(function (results) {
+				//console.log(results); // 获得一个Array: ['P1', 'P2']
+				for(i=0;i<results.length;i++){
+					content.push.apply(content,results[i]);
+				}
+				for (var i = 0; i < content.length; i++) {
+					digest[i] = objectHash.MD5(content[i]);
+				}
+				encodeCallBack({
+					fileName: fileName,
+					fileType: fileType,
+					numOfDivision: numOfDivision*file_blocks,
+					numOfAppend: numOfAppend*file_blocks,
+					content: content,
+					digest: digest,
+					fileSize: fileSize,
+					fileblocks:file_blocks
+				})
+			});
+			//const t1 = Date.now();//Encode timing start
 			//TODO
 			//content = erasure.split(raw, numOfDivision, numOfAppend);
-			content = callEncoder(raw,numOfDivision,numOfAppend);
-			const t2 = Date.now();//Encode timing end
-			console.log("Erasure encode took " + (t2 - t1) + " mS");
+			
+			//const t2 = Date.now();//Encode timing end
+			//console.log("Erasure encode took " + (t2 - t1) + " mS");
 			//if (document.getElementById("encode") != null)
 			//	document.getElementById("encode").innerHTML += "Encode took " + (t2 - t1) + "mS to generate " + content.length + " fragments</br>";
 			//TODO
 			//var digest = new Array();
-			const t3 = Date.now();//Hash timing start
-			for (var i = 0; i < content.length; i++) {
-				digest[i] = objectHash.MD5(content[i]);
-			}
-			const t4 = Date.now();//Hash timing end
+			//const t3 = Date.now();//Hash timing start
+			
+			//const t4 = Date.now();//Hash timing end
 			//if (document.getElementById("encode") != null)
 			//	document.getElementById("encode").innerHTML += "Hash took " + (t4 - t3) + "mS to generate " + content.length + " digests</br>";
 			/* Next we can use sendFragments() to send the results to the backend,
@@ -248,18 +297,10 @@ function encodeFile(selectedFile) {
              * */
 			// Here we use decodeFile to test if encode and decode both work properlly.
 			//decodeFile(fileName, fileType, numOfDivision, numOfAppend, content, digest, fileSize);
-			console.log("Success");
+			//console.log("Success");
 
 			//console.log(content);
-			encodeCallBack({
-				fileName: fileName,
-				fileType: fileType,
-				numOfDivision: numOfDivision,
-				numOfAppend: numOfAppend,
-				content: content,
-				digest: digest,
-				fileSize: fileSize
-			})
+			
 		//};
 		//console.log(raw);
 		//worker.postMessage({ input: raw });
@@ -304,6 +345,7 @@ function encodeCallBack(fileInfo){
 			nod:fileInfo.numOfDivision,//int
 			noa:fileInfo.numOfAppend,//int
 			fileSize:fileInfo.fileSize,//int
+			fileblocks:fileInfo.fileblocks, //int
 			whose:$.cookie("username"),//string
 		}),
 		dataType:"json",
@@ -442,7 +484,7 @@ function fileDownload() {
 				//createAndDownloadFile(deviceArray[i].filename, 'jpg', received_bytes)
 			}
 			let downloadTimeoutId =setTimeout(function(){
-				decodeFile(fileInfo.name,fileInfo.fileType,fileInfo.nod,fileInfo.noa,content,digest,fileInfo.fileSize);
+				decodeFile(fileInfo.name,fileInfo.fileType,fileInfo.nod,fileInfo.noa,content,digest,fileInfo.fileSize,fileInfo.fileblocks);
 			}, 10000)
 
             //添加进度条

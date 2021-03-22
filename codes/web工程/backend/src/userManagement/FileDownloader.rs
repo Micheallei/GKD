@@ -19,6 +19,7 @@ pub struct FileDownloader{
     devices:Value,
     fileType:String,
     fileSize:i64,
+    fileblocks:i64,
     noa:i64,
     nod:i64,//以上为返回值
     serialVersionUID: i64,
@@ -35,6 +36,7 @@ impl FileDownloader {
             devices:json!({}),
             fileType:String::new(),
             fileSize:0,
+            fileblocks:0,
             noa:0,
             nod:0,
             serialVersionUID: 1,
@@ -105,6 +107,12 @@ impl FileDownloader {
 
     pub fn setNod(&mut self, nnod: i64) {
         self.nod = nnod;
+    }
+    pub fn setFileBlocks(&mut self,nfileblocks:i64){
+        self.fileblocks = nfileblocks;
+    }
+    pub fn getFileBlocks(&self) -> i64{
+        self.fileblocks.clone()
     }
 
     pub fn downloadRegister(path1:String, name1:String) -> FileDownloader {
@@ -196,7 +204,7 @@ impl FileDownloader {
                 filedownloader.setNod(file_item.get_nod().into());
                 filedownloader.setNoa(file_item.get_noa().into());
                 filedownloader.setName(file_item.get_name());
-
+                filedownloader.setFileBlocks(file_item.get_fileblocks().into());
                 //query.closeConnection();
                 let result = String::from("OK");
                 filedownloader.setResult(result);

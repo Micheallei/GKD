@@ -26,6 +26,7 @@ pub struct FileUploader{
     pub devices: Value,
     pub fileType: String,
     pub fileSize: i32,
+    pub fileblocks:i32,
     pub noa: i32,
     pub nod: i32,
     pub whose: String,
@@ -49,6 +50,7 @@ impl FileUploader{
             devices: serde_json::from_str("").unwrap(),//?用空字符串来初始化
             fileType: String::new(),
             fileSize: 0,
+            fileblocks:0,
             noa: 0,
             nod: 0,
             whose: String::new(),
@@ -261,7 +263,7 @@ impl FileUploader{
             return return_val;
         }
         else{
-            let mut newFile = FileItem::init_2(self.fileName.clone(), self.path.clone(), "rwxrwxrwx".to_string(), "".to_string(), self.nod.clone(), self.noa.clone(), false, self.fileType.clone(), self.fileSize.clone(), self.whose.clone());
+            let mut newFile = FileItem::init_2(self.fileName.clone(), self.path.clone(), "rwxrwxrwx".to_string(), "".to_string(), self.nod.clone(), self.noa.clone(), false, self.fileType.clone(), self.fileSize.clone(), self.fileblocks.clone(),self.whose.clone());
             self.fileId = query.addFile(newFile);
             if self.fileId < 0{
                 //TODO
