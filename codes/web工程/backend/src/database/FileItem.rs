@@ -10,13 +10,14 @@ pub struct FileItem {
     pub is_folder: bool,
     pub file_type: String,
     pub file_size: i32,
+    pub fileblocks: i32,
     pub whose: String,
 }
 
 impl FileItem {
     fn init(id: i32, name: String, path: String, attribute: String,
         time: String, nod: i32, noa: i32, is_folder: bool, file_type: String,
-        file_size: i32, whose: String) -> Self {
+        file_size: i32, fileblocks: i32, whose: String) -> Self {
             FileItem {
                 id,
                 name,
@@ -28,13 +29,14 @@ impl FileItem {
                 is_folder,
                 file_type,
                 file_size,
+                fileblocks,
                 whose,
             }
         }
 
     pub fn init_2(name: String, path: String, attribute: String,
         time: String, noa: i32, nod: i32, is_folder: bool, file_type: String,
-        file_size: i32, whose: String) -> Self {
+        file_size: i32, fileblocks: i32, whose: String) -> Self {
             FileItem {
                 id: 0,
                 name,
@@ -46,6 +48,7 @@ impl FileItem {
                 is_folder,
                 file_type,
                 file_size,
+                fileblocks,
                 whose,
             }
         }
@@ -150,5 +153,13 @@ impl FileItem {
             string.push(c);
         }
         string
+    }
+
+    pub fn get_fileblocks(&self) -> i32{
+        self.fileblocks
+    }
+
+    pub fn set_fileblocks(&mut self, fileblocks:i32) {
+        self.fileblocks = fileblocks;
     }
 }

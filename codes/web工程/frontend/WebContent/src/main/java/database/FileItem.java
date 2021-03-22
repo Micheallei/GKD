@@ -12,9 +12,10 @@ public class FileItem {
 	private boolean isFolder;
 	private String fileType;
 	private int fileSize;
+	private int fileblocks;
 	private String whose;
 	
-	FileItem(int id, String fileName, String path, String attribute, String time, int nod, int noa, boolean isFolder, String fileType, int fileSize,String whose) {
+	FileItem(int id, String fileName, String path, String attribute, String time, int nod, int noa, boolean isFolder, String fileType, int fileSize, int fileblocks, String whose) {
 		this.id=id;
 		this.fileName = fileName;
 		this.path=path;
@@ -25,10 +26,11 @@ public class FileItem {
 		this.isFolder=isFolder;
 		this.fileType=fileType;
 		this.fileSize=fileSize;
+		this.fileblocks=fileblocks;
 		this.whose=whose;
 	}
 
-	public FileItem(String fileName, String path, String attribute, String time, int nod, int noa, boolean isFolder, String fileType, int fileSize,String whose){
+	public FileItem(String fileName, String path, String attribute, String time, int nod, int noa, boolean isFolder, String fileType, int fileSize, int fileblocks, String whose){
 		this.fileName = fileName;
 		this.path=path;
 		this.attribute=attribute;
@@ -38,6 +40,7 @@ public class FileItem {
 		this.isFolder=isFolder;
 		this.fileType=fileType;
 		this.fileSize=fileSize;
+		this.fileblocks=fileblocks;
 		this.whose=whose;
 	}
 
@@ -106,4 +109,11 @@ public class FileItem {
 
 	public void setWhose(String whose){this.whose=whose;}
 	public String getWhose(){return  whose;}
+
+	public void set_fileblocks(int fileblocks) {
+		this.fileblocks = fileblocks;
+	}
+	public int get_fileblocks() {
+		return fileblocks;
+	}
 }

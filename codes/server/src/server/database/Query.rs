@@ -49,7 +49,7 @@ impl Query {
                                 params!{"name" => name, "path" => path})
                 .map(|result| {
                     result.map(|x| x.unwrap()).map(|row| {
-                        let (id, name, path, attribute, time, nod, noa, is_folder, file_type, file_size, whose) = my::from_row(row);
+                        let (id, name, path, attribute, time, nod, noa, is_folder, file_type, file_size, fileblocks, whose) = my::from_row(row);
                         FileItem {
                             id: id,
                             name: name,
@@ -61,6 +61,7 @@ impl Query {
                             is_folder: is_folder,
                             file_type: file_type,
                             file_size: file_size,
+                            fileblocks: fileblocks,
                             whose: whose,
                         }
                     }).collect()
@@ -78,6 +79,7 @@ impl Query {
                     is_folder: false,
                     file_type: "".to_string(),
                     file_size: 0,
+                    fileblocks: 0,
                     whose: "".to_string(),
                 }
             }
@@ -94,6 +96,7 @@ impl Query {
                         is_folder: false,
                         file_type: "".to_string(),
                         file_size: 0,
+                        fileblocks: 0,
                         whose: "".to_string(),
                     }
                 }
@@ -109,6 +112,7 @@ impl Query {
                     is_folder: select_files.is_folder().clone(),
                     file_type: select_files.get_file_type(),
                     file_size: select_files.get_file_size().clone(),
+                    fileblocks: select_files.get_fileblocks().clone(),
                     whose: select_files.get_whose(),
                 }
             }
@@ -150,7 +154,7 @@ impl Query {
                                 params!{"whose" => whose.unwrap(), "path" => path.unwrap()})
                 .map(|result| {
                     result.map(|x| x.unwrap()).map(|row| {
-                        let (id, name, path, attribute, time, nod, noa, is_folder, file_type, file_size, whose) = my::from_row(row);
+                        let (id, name, path, attribute, time, nod, noa, is_folder, file_type, file_size, fileblocks, whose) = my::from_row(row);
                         FileItem {
                             id: id,
                             name: name,
@@ -162,6 +166,7 @@ impl Query {
                             is_folder: is_folder,
                             file_type: file_type,
                             file_size: file_size,
+                            fileblocks: fileblocks,
                             whose: whose,
                         }
                     }).collect()
@@ -178,6 +183,7 @@ impl Query {
                 is_folder: false,
                 file_type: "".to_string(),
                 file_size: 0,
+                fileblocks: 0,
                 whose: "".to_string(),
             };
             return vec![file];
@@ -195,6 +201,7 @@ impl Query {
                 is_folder: false,
                 file_type: "".to_string(),
                 file_size: 0,
+                fileblocks: 0,
                 whose: "".to_string(),
             };
             return vec![file];
@@ -234,7 +241,7 @@ impl Query {
                 params!{"id" => id})
                 .map(|result| {
                     result.map(|x| x.unwrap()).map(|row| {
-                        let (id, name, path, attribute, time, nod, noa, is_folder, file_type, file_size, whose) = my::from_row(row);
+                        let (id, name, path, attribute, time, nod, noa, is_folder, file_type, file_size, fileblocks, whose) = my::from_row(row);
                         FileItem {
                             id: id,
                             name: name,
@@ -246,6 +253,7 @@ impl Query {
                             is_folder: is_folder,
                             file_type: file_type,
                             file_size: file_size,
+                            fileblocks: fileblocks,
                             whose: whose,
                         }
                     }).collect()
@@ -263,6 +271,7 @@ impl Query {
                     is_folder: false,
                     file_type: "".to_string(),
                     file_size: 0,
+                    fileblocks: 0,
                     whose: "".to_string(),
                 };
                 return file;
@@ -280,21 +289,24 @@ impl Query {
                         is_folder: false,
                         file_type: "".to_string(),
                         file_size: 0,
+                        fileblocks: 0,
                         whose: "".to_string(),
                     }
                 }
+                let mut select_files = selected_files[0].clone();
                 return FileItem {
-                    id: selected_files[0].id,
-                    name: selected_files[0].name.clone(),
-                    path: selected_files[0].path.clone(),
-                    attribute: selected_files[0].attribute.clone(),
-                    time: selected_files[0].time.clone(),
-                    noa: selected_files[0].noa,
-                    nod: selected_files[0].nod,
-                    is_folder: selected_files[0].is_folder,
-                    file_type: selected_files[0].file_type.clone(),
-                    file_size: selected_files[0].file_size,
-                    whose: selected_files[0].whose.clone(),
+                    id: select_files.get_id().clone(),
+                    name: select_files.get_name(),
+                    path: select_files.get_path(),
+                    attribute: select_files.get_attribute(),
+                    time: select_files.get_time(),
+                    nod: select_files.get_nod().clone(),
+                    noa: select_files.get_noa().clone(),
+                    is_folder: select_files.is_folder().clone(),
+                    file_type: select_files.get_file_type(),
+                    file_size: select_files.get_file_size().clone(),
+                    fileblocks: select_files.get_fileblocks().clone(),
+                    whose: select_files.get_whose(),
                 }
             }
         }
@@ -648,8 +660,8 @@ impl Query{
         //println!("execute query.addfile");
         if file.is_folder(){
             //println!("in addfile: file is folder");
-            for mut stmt in self.pool.prepare(r"INSERT INTO DFS.FILE (NAME,PATH,ATTRIBUTE,TIME,NOD,NOA,IS_FOLDER,WHOSE,FILE_TYPE,FILE_SIZE)
-                VALUES (:name,:path,:attribute,:time,:nod,:noa,true,:whose,:filetype,:filesize);").into_iter() {
+            for mut stmt in self.pool.prepare(r"INSERT INTO DFS.FILE (NAME,PATH,ATTRIBUTE,TIME,NOD,NOA,IS_FOLDER,WHOSE,FILE_TYPE,FILE_SIZE,FILEBLOCKS)
+                VALUES (:name,:path,:attribute,:time,:nod,:noa,true,:whose,:filetype,:filesize,:fileblocks);").into_iter() {
                 suc = stmt.execute(params!{
                     "name" => file.get_name(),
                     "path" => file.get_path(),
@@ -659,13 +671,14 @@ impl Query{
                     "noa" => file.get_noa(),
                     "whose" => file.get_whose(),
                     "filetype" => file.get_file_type(),
-                    "filesize" => file.get_file_size()
+                    "filesize" => file.get_file_size(),
+                    "fileblocks" => file.get_fileblocks()
                 }).unwrap().last_insert_id().try_into().unwrap();
             }
         } else {
             //println!("in addfile: file is not folder");
-            for mut stmt in self.pool.prepare(r"INSERT INTO DFS.FILE (NAME,PATH,ATTRIBUTE,TIME,NOD,NOA,IS_FOLDER,WHOSE,FILE_TYPE,FILE_SIZE)
-            VALUES (:name,:path,:attribute,:time,:nod,:noa,false,:whose,:filetype,:filesize);").into_iter() {
+            for mut stmt in self.pool.prepare(r"INSERT INTO DFS.FILE (NAME,PATH,ATTRIBUTE,TIME,NOD,NOA,IS_FOLDER,WHOSE,FILE_TYPE,FILE_SIZE,FILEBLOCKS)
+            VALUES (:name,:path,:attribute,:time,:nod,:noa,false,:whose,:filetype,:filesize,:fileblocks);").into_iter() {
             suc = stmt.execute(params!{
                 "name" => file.get_name(),
                 "path" => file.get_path(),
@@ -675,7 +688,8 @@ impl Query{
                 "noa" => file.get_noa(),
                 "whose" => file.get_whose(),
                 "filetype" => file.get_file_type(),
-                "filesize" => file.get_file_size()
+                "filesize" => file.get_file_size(),
+                "fileblocks" => file.get_fileblocks()
             }).unwrap().last_insert_id().try_into().unwrap();
             }
         }
@@ -710,7 +724,7 @@ impl Query{
         let mut suc:i32 = -1;
         if file.is_folder(){
             for mut stmt in self.pool.prepare(r"UPDATE DFS.FILE SET NAME=:name,PATH=:path,ATTRIBUTE=:attribute,
-            TIME=:time,NOD=:nod,NOA=:noa,IS_FOLDER=true,WHOSE=:whose,FILE_TYPE=:filetype,FILE_SIZE=:filesize WHERE ID=:id;").into_iter() {
+            TIME=:time,NOD=:nod,NOA=:noa,IS_FOLDER=true,WHOSE=:whose,FILE_TYPE=:filetype,FILE_SIZE=:filesize,FILEBLOCKS=:fileblocks WHERE ID=:id;").into_iter() {
                 stmt.execute(params!{
                     "name" => file.get_name(),
                     "path" => file.get_path(),
@@ -720,12 +734,13 @@ impl Query{
                     "noa" => file.get_noa(),
                     "whose" => file.get_whose(),
                     "filetype" => file.get_file_type(),
-                    "filesize" => file.get_file_size()
+                    "filesize" => file.get_file_size(),
+                    "fileblocks" => file.get_fileblocks()
                 }).unwrap().last_insert_id() as i32;
             }
         } else {
             for mut stmt in self.pool.prepare(r"UPDATE DFS.FILE SET NAME=:name,PATH=:path,ATTRIBUTE=:attribute,
-            TIME=:time,NOD=:nod,NOA=:noa,IS_FOLDER=false,WHOSE=:whose,FILE_TYPE=:filetype,FILE_SIZE=:filesize WHERE ID=:id;").into_iter() {
+            TIME=:time,NOD=:nod,NOA=:noa,IS_FOLDER=false,WHOSE=:whose,FILE_TYPE=:filetype,FILE_SIZE=:filesize,FILEBLOCKS=:fileblocks WHERE ID=:id;").into_iter() {
                 stmt.execute(params!{
                     "name" => file.get_name(),
                     "path" => file.get_path(),
@@ -735,7 +750,8 @@ impl Query{
                     "noa" => file.get_noa(),
                     "whose" => file.get_whose(),
                     "filetype" => file.get_file_type(),
-                    "filesize" => file.get_file_size()
+                    "filesize" => file.get_file_size(),
+                    "fileblocks" => file.get_fileblocks()
                 }).unwrap().last_insert_id() as i32;
             }
         }

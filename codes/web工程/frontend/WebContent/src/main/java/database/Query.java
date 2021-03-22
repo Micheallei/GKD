@@ -51,9 +51,10 @@ public class Query {
                 boolean isFolder = rs.getBoolean("IS_FOLDER");
                 String fileType=rs.getString("FILE_TYPE");
                 int fileSize=rs.getInt("FILE_SIZE");
+                int fileblocks = rs.getInt("FILEBLOCKS");
                 String whose=rs.getString("WHOSE");
 
-                fileItem=new FileItem(id,name,path,attr,time,nod,noa,isFolder,fileType,fileSize,whose);
+                fileItem=new FileItem(id,name,path,attr,time,nod,noa,isFolder,fileType,fileSize,fileblocks,whose);
             }
         }
         catch(Exception e){
@@ -279,8 +280,9 @@ public class Query {
                 isFolder = rs.getBoolean("IS_FOLDER");
                 String fileType=rs.getString("FILE_TYPE");
                 int fileSize=rs.getInt("FILE_SIZE");
+                int fileblocks = rs.getInt("FILEBLOCKS");
 
-                fileArray[i]=new FileItem(id,name,path,attr,time,nod,noa,isFolder,fileType,fileSize,whose);
+                fileArray[i]=new FileItem(id,name,path,attr,time,nod,noa,isFolder,fileType,fileSize,fileblocks,whose);
                 rs.next();
                 i++;
             }
@@ -801,13 +803,13 @@ public class Query {
             stmt = conn.createStatement();
             String sql;
             if (file.isFolder())
-                sql = String.format("INSERT INTO DFS.FILE (NAME,PATH,ATTRIBUTE,TIME,NOD,NOA,IS_FOLDER,WHOSE,FILE_TYPE,FILE_SIZE) "
-                                + "VALUES ('%s','%s','%s','%s',%d,%d,true,'%s','%s',%d);",file.getFileName(),file.getPath(),
-                        file.getAttribute(),file.getTime(),1,0,file.getWhose(),"",0);
+                sql = String.format("INSERT INTO DFS.FILE (NAME,PATH,ATTRIBUTE,TIME,NOD,NOA,IS_FOLDER,WHOSE,FILE_TYPE,FILE_SIZE,FILEBLOCKS) "
+                                + "VALUES ('%s','%s','%s','%s',%d,%d,true,'%s','%s',%d,%d);",file.getFileName(),file.getPath(),
+                        file.getAttribute(),file.getTime(),1,0,file.getWhose(),"",0,1);
             else
-                sql = String.format("INSERT INTO DFS.FILE (NAME,PATH,ATTRIBUTE,TIME,NOD,NOA,IS_FOLDER,WHOSE,FILE_TYPE,FILE_SIZE) "
-                                + "VALUES ('%s','%s','%s','%s',%d,%d,false,'%s','%s',%d);",file.getFileName(),file.getPath(),
-                        file.getAttribute(),file.getTime(),file.getNod(),file.getNoa(),file.getWhose(),file.getFileType(),file.getFileSize());
+                sql = String.format("INSERT INTO DFS.FILE (NAME,PATH,ATTRIBUTE,TIME,NOD,NOA,IS_FOLDER,WHOSE,FILE_TYPE,FILE_SIZE,FILEBLOCKS) "
+                                + "VALUES ('%s','%s','%s','%s',%d,%d,false,'%s','%s',%d,%d);",file.getFileName(),file.getPath(),
+                        file.getAttribute(),file.getTime(),file.getNod(),file.getNoa(),file.getWhose(),file.getFileType(),file.getFileSize(),file.get_fileblocks());
             System.out.println(sql);
             suc = stmt.executeUpdate(sql);
             if (suc>0){

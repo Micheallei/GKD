@@ -1,8 +1,5 @@
 use std::*;
 use std::convert::TryInto;
-//include!("FileItem.rs");
-//include!("RequestItem.rs");
-//include!("DeviceItem.rs");
 use super::DeviceItem::DeviceItem;
 use super::FileItem::FileItem;
 use super::RequestItem::RequestItem;
@@ -40,7 +37,7 @@ pub struct Query{
 impl Query {
     pub fn new() -> Query{
         //需要大家在自己的电脑把 root:XXXX 改成自己的 mysql 密码
-        let pool = my::Pool::new("mysql://root:201314@localhost:3306/mysql").unwrap();
+        let pool = my::Pool::new("mysql://root:mysql@localhost:3306/mysql").unwrap();
         Query {
             pool: pool,
         }
@@ -52,7 +49,7 @@ impl Query {
                                 params!{"name" => name, "path" => path})
                 .map(|result| {
                     result.map(|x| x.unwrap()).map(|row| {
-                        let (id, name, path, attribute, time, nod, noa, is_folder, file_type, file_size, whose) = my::from_row(row);
+                        let (id, name, path, attribute, time, nod, noa, is_folder, file_type, file_size, fileblocks, whose) = my::from_row(row);
                         FileItem {
                             id: id,
                             name: name,
@@ -64,6 +61,7 @@ impl Query {
                             is_folder: is_folder,
                             file_type: file_type,
                             file_size: file_size,
+                            fileblocks: fileblocks,
                             whose: whose,
                         }
                     }).collect()
@@ -81,6 +79,7 @@ impl Query {
                     is_folder: false,
                     file_type: "".to_string(),
                     file_size: 0,
+                    fileblocks: 0,
                     whose: "".to_string(),
                 }
             }
@@ -97,6 +96,7 @@ impl Query {
                         is_folder: false,
                         file_type: "".to_string(),
                         file_size: 0,
+                        fileblocks: 0,
                         whose: "".to_string(),
                     }
                 }
@@ -112,6 +112,7 @@ impl Query {
                     is_folder: select_files.is_folder().clone(),
                     file_type: select_files.get_file_type(),
                     file_size: select_files.get_file_size().clone(),
+                    fileblocks: select_files.get_fileblocks().clone(),
                     whose: select_files.get_whose(),
                 }
             }
@@ -153,7 +154,7 @@ impl Query {
                                 params!{"whose" => whose.unwrap(), "path" => path.unwrap()})
                 .map(|result| {
                     result.map(|x| x.unwrap()).map(|row| {
-                        let (id, name, path, attribute, time, nod, noa, is_folder, file_type, file_size, whose) = my::from_row(row);
+                        let (id, name, path, attribute, time, nod, noa, is_folder, file_type, file_size, fileblocks, whose) = my::from_row(row);
                         FileItem {
                             id: id,
                             name: name,
@@ -165,6 +166,7 @@ impl Query {
                             is_folder: is_folder,
                             file_type: file_type,
                             file_size: file_size,
+                            fileblocks: fileblocks,
                             whose: whose,
                         }
                     }).collect()
@@ -181,6 +183,7 @@ impl Query {
                 is_folder: false,
                 file_type: "".to_string(),
                 file_size: 0,
+                fileblocks: 0,
                 whose: "".to_string(),
             };
             return vec![file];
@@ -198,6 +201,7 @@ impl Query {
                 is_folder: false,
                 file_type: "".to_string(),
                 file_size: 0,
+                fileblocks: 0,
                 whose: "".to_string(),
             };
             return vec![file];
@@ -237,7 +241,7 @@ impl Query {
                 params!{"id" => id})
                 .map(|result| {
                     result.map(|x| x.unwrap()).map(|row| {
-                        let (id, name, path, attribute, time, nod, noa, is_folder, file_type, file_size, whose) = my::from_row(row);
+                        let (id, name, path, attribute, time, nod, noa, is_folder, file_type, file_size, fileblocks, whose) = my::from_row(row);
                         FileItem {
                             id: id,
                             name: name,
@@ -249,6 +253,7 @@ impl Query {
                             is_folder: is_folder,
                             file_type: file_type,
                             file_size: file_size,
+                            fileblocks: fileblocks,
                             whose: whose,
                         }
                     }).collect()
@@ -266,6 +271,7 @@ impl Query {
                     is_folder: false,
                     file_type: "".to_string(),
                     file_size: 0,
+                    fileblocks: 0,
                     whose: "".to_string(),
                 };
                 return file;
@@ -283,72 +289,28 @@ impl Query {
                         is_folder: false,
                         file_type: "".to_string(),
                         file_size: 0,
+                        fileblocks: 0,
                         whose: "".to_string(),
                     }
                 }
+                let mut select_files = selected_files[0].clone();
                 return FileItem {
-                    id: selected_files[0].id,
-                    name: selected_files[0].name.clone(),
-                    path: selected_files[0].path.clone(),
-                    attribute: selected_files[0].attribute.clone(),
-                    time: selected_files[0].time.clone(),
-                    noa: selected_files[0].noa,
-                    nod: selected_files[0].nod,
-                    is_folder: selected_files[0].is_folder,
-                    file_type: selected_files[0].file_type.clone(),
-                    file_size: selected_files[0].file_size,
-                    whose: selected_files[0].whose.clone(),
+                    id: select_files.get_id().clone(),
+                    name: select_files.get_name(),
+                    path: select_files.get_path(),
+                    attribute: select_files.get_attribute(),
+                    time: select_files.get_time(),
+                    nod: select_files.get_nod().clone(),
+                    noa: select_files.get_noa().clone(),
+                    is_folder: select_files.is_folder().clone(),
+                    file_type: select_files.get_file_type(),
+                    file_size: select_files.get_file_size().clone(),
+                    fileblocks: select_files.get_fileblocks().clone(),
+                    whose: select_files.get_whose(),
                 }
             }
         }
     }
-
-
-    /*pub fn queryFile_Bypath(&self, path: Option<String>) -> Vec<FileItem>{
-        let selected_files: Result<Vec<FileItem>, mysql::Error> =
-            self.pool.prep_exec("SELECT * FROM DFS.FILE WHERE PATH = :path",
-                                params!{"path" => path})
-                .map(|result| {
-                    result.map(|x| x.unwrap()).map(|row| {
-                        let (id, name, path, attribute, time, noa, is_folder) = my::from_row(row);
-                        FileItem {
-                            id: id,
-                            name: name,
-                            path: path,
-                            attribute: attribute,
-                            time: time,
-                            noa: noa,
-                            is_folder: is_folder,
-                        }
-                    }).collect()
-                });
-        if let Err(e) = selected_files {
-            let file = FileItem {
-                id: -1,
-                name: "".to_string(),
-                path: "".to_string(),
-                attribute: "".to_string(),
-                time: "".to_string(),
-                noa: 0,
-                is_folder: false,
-            };
-            return vec![file];
-        }
-        let files = selected_files.unwrap();
-        if files.len() == 0 {
-            let file =  FileItem {
-                id: 0,
-                name: "".to_string(),
-                path: "".to_string(),
-                attribute: "".to_string(),
-                time: "".to_string(),
-                noa: 0,
-                is_folder: false,
-            };
-            return vec![file];
-        }
-        files
-    }*/
 
     pub fn queryFragmentNumbers(&self, fileId: i32) -> i32{
         let selected_fragments: Result<Vec<FragmentItem>, mysql::Error> =
@@ -695,11 +657,11 @@ impl Query {
 impl Query{
     pub fn addFile(&self, mut file:FileItem) -> i32{
         let mut suc:i32 = -1;
-        println!("execute query.addfile");
+        //println!("execute query.addfile");
         if file.is_folder(){
-            println!("in addfile: file is folder");
-            for mut stmt in self.pool.prepare(r"INSERT INTO DFS.FILE (NAME,PATH,ATTRIBUTE,TIME,NOD,NOA,IS_FOLDER,WHOSE,FILE_TYPE,FILE_SIZE)
-                VALUES (:name,:path,:attribute,:time,:nod,:noa,true,:whose,:filetype,:filesize);").into_iter() {
+            //println!("in addfile: file is folder");
+            for mut stmt in self.pool.prepare(r"INSERT INTO DFS.FILE (NAME,PATH,ATTRIBUTE,TIME,NOD,NOA,IS_FOLDER,WHOSE,FILE_TYPE,FILE_SIZE,FILEBLOCKS)
+                VALUES (:name,:path,:attribute,:time,:nod,:noa,true,:whose,:filetype,:filesize,:fileblocks);").into_iter() {
                 suc = stmt.execute(params!{
                     "name" => file.get_name(),
                     "path" => file.get_path(),
@@ -709,14 +671,14 @@ impl Query{
                     "noa" => file.get_noa(),
                     "whose" => file.get_whose(),
                     "filetype" => file.get_file_type(),
-                    "filesize" => file.get_file_size()
+                    "filesize" => file.get_file_size(),
+                    "fileblocks" => file.get_fileblocks()
                 }).unwrap().last_insert_id().try_into().unwrap();
-                //此处未处理execute不成功时，返回-1的情况
             }
         } else {
-            println!("in addfile: file is not folder");
-            for mut stmt in self.pool.prepare(r"INSERT INTO DFS.FILE (NAME,PATH,ATTRIBUTE,TIME,NOD,NOA,IS_FOLDER,WHOSE,FILE_TYPE,FILE_SIZE)
-            VALUES (:name,:path,:attribute,:time,:nod,:noa,false,:whose,:filetype,:filesize);").into_iter() {
+            //println!("in addfile: file is not folder");
+            for mut stmt in self.pool.prepare(r"INSERT INTO DFS.FILE (NAME,PATH,ATTRIBUTE,TIME,NOD,NOA,IS_FOLDER,WHOSE,FILE_TYPE,FILE_SIZE,FILEBLOCKS)
+            VALUES (:name,:path,:attribute,:time,:nod,:noa,false,:whose,:filetype,:filesize,:fileblocks);").into_iter() {
             suc = stmt.execute(params!{
                 "name" => file.get_name(),
                 "path" => file.get_path(),
@@ -726,12 +688,11 @@ impl Query{
                 "noa" => file.get_noa(),
                 "whose" => file.get_whose(),
                 "filetype" => file.get_file_type(),
-                "filesize" => file.get_file_size()
+                "filesize" => file.get_file_size(),
+                "fileblocks" => file.get_fileblocks()
             }).unwrap().last_insert_id().try_into().unwrap();
-                //此处未处理execute不成功时，返回-1的情况
             }
         }
-        println!("addfile result: {}", suc);
         return suc;
     }
 
@@ -741,7 +702,6 @@ impl Query{
             stmt.execute(params!{
                 "id" => id
             }).unwrap();
-            //此处未处理execute不成功时，返回-1的情况
         }
         suc = 1;
         return suc;
@@ -755,7 +715,6 @@ impl Query{
                 "path" => path.clone(),
                 "whose" => whose.clone()
             }).unwrap();
-            //此处未处理execute不成功时，返回-1的情况
         }
         suc = 1;
         return suc;
@@ -765,7 +724,7 @@ impl Query{
         let mut suc:i32 = -1;
         if file.is_folder(){
             for mut stmt in self.pool.prepare(r"UPDATE DFS.FILE SET NAME=:name,PATH=:path,ATTRIBUTE=:attribute,
-            TIME=:time,NOD=:nod,NOA=:noa,IS_FOLDER=true,WHOSE=:whose,FILE_TYPE=:filetype,FILE_SIZE=:filesize WHERE ID=:id;").into_iter() {
+            TIME=:time,NOD=:nod,NOA=:noa,IS_FOLDER=true,WHOSE=:whose,FILE_TYPE=:filetype,FILE_SIZE=:filesize,FILEBLOCKS=:fileblocks WHERE ID=:id;").into_iter() {
                 stmt.execute(params!{
                     "name" => file.get_name(),
                     "path" => file.get_path(),
@@ -775,13 +734,13 @@ impl Query{
                     "noa" => file.get_noa(),
                     "whose" => file.get_whose(),
                     "filetype" => file.get_file_type(),
-                    "filesize" => file.get_file_size()
+                    "filesize" => file.get_file_size(),
+                    "fileblocks" => file.get_fileblocks()
                 }).unwrap().last_insert_id() as i32;
-                //此处未处理execute不成功时，返回-1的情况
             }
         } else {
             for mut stmt in self.pool.prepare(r"UPDATE DFS.FILE SET NAME=:name,PATH=:path,ATTRIBUTE=:attribute,
-            TIME=:time,NOD=:nod,NOA=:noa,IS_FOLDER=false,WHOSE=:whose,FILE_TYPE=:filetype,FILE_SIZE=:filesize WHERE ID=:id;").into_iter() {
+            TIME=:time,NOD=:nod,NOA=:noa,IS_FOLDER=false,WHOSE=:whose,FILE_TYPE=:filetype,FILE_SIZE=:filesize,FILEBLOCKS=:fileblocks WHERE ID=:id;").into_iter() {
                 stmt.execute(params!{
                     "name" => file.get_name(),
                     "path" => file.get_path(),
@@ -791,9 +750,9 @@ impl Query{
                     "noa" => file.get_noa(),
                     "whose" => file.get_whose(),
                     "filetype" => file.get_file_type(),
-                    "filesize" => file.get_file_size()
+                    "filesize" => file.get_file_size(),
+                    "fileblocks" => file.get_fileblocks()
                 }).unwrap().last_insert_id() as i32;
-                //此处未处理execute不成功时，返回-1的情况
             }
         }
         suc = 1;
@@ -809,15 +768,12 @@ impl Query{
                 "path" => Filepath.clone(),
                 "whose" => whose.clone()
             }).unwrap().last_insert_id() as i32;
-            //此处未处理execute不成功时，返回-1的情况
         }
         suc = 1;
         return suc;
     }
 
     pub fn alterDevice(&self, mut device:DeviceItem) -> i32{
-        //println!("enter alterDevice");//note:by lyf
-        //println!("device:ip={},port={},rs={},id={}",device.get_ip(),device.get_port(),device.get_rs(),device.get_id());
         let mut suc:i32 = -1;
         if device.is_online(){
             for mut stmt in self.pool.prepare("UPDATE DFS.DEVICE SET IP=:ip,PORT=:port,IS_ONLINE=true,
@@ -908,14 +864,12 @@ impl Query{
                 "fragmentid" => request.get_fragment_id(),
                 "deviceid" => request.get_device_id()
             }).unwrap().last_insert_id().try_into().unwrap();
-            //此处未处理execute不成功时，返回-1的情况
         }
         suc = 1;
         return suc;
     }
 
     pub fn deleteRequest(&self,id:i32) -> i32{
-        println!("enter delete request");
         let mut suc:i32 = -1;
         for mut stmt in self.pool.prepare(r"DELETE FROM DFS.REQUEST WHERE ID=:id").into_iter() {
             let res = stmt.execute(params!{
