@@ -35,7 +35,7 @@ impl FileItem {
         }
 
     pub fn init_2(name: String, path: String, attribute: String,
-        time: String, noa: i32, nod: i32, is_folder: bool, file_type: String,
+        time: String, nod: i32, noa: i32, is_folder: bool, file_type: String,
         file_size: i32, fileblocks: i32, whose: String) -> Self {
             FileItem {
                 id: 0,

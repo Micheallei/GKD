@@ -263,7 +263,7 @@ impl FileUploader{
             return return_val;
         }
         else{
-            let mut newFile = FileItem::init_2(self.fileName.clone(), self.path.clone(), "rwxrwxrwx".to_string(), "".to_string(),  self.noa.clone(), self.nod.clone(),false, self.fileType.clone(), self.fileSize.clone(), self.fileblocks.clone(),self.whose.clone());
+            let mut newFile = FileItem::init_2(self.fileName.clone(), self.path.clone(), "rwxrwxrwx".to_string(), "".to_string(), self.nod.clone(),self.noa.clone(),false, self.fileType.clone(), self.fileSize.clone(), self.fileblocks.clone(),self.whose.clone());
             self.fileId = query.addFile(newFile);
             if self.fileId < 0{
                 //TODO
