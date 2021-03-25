@@ -250,7 +250,6 @@ function encodeFile(selectedFile) {
 			alert("waiting for worker");
 			console.log(e.data);*/
 			/*fileEncoder*/
-			file_blocks =Math.ceil(raw.length/(blocksize));
 			for(i=0;i<file_blocks;i++){
 				queue.push(new Promise(function (resolve, reject) {
 					//console.log(i);
