@@ -133,7 +133,7 @@ impl GetFileList {
             let qname: Option<String> = Some(namelist[i].clone());
             let mut file_item = query.queryFile_Bypathname(qpath, qname);
             let file_id = file_item.get_id();
-            for j in 0..6 {
+            for j in 0..file_item.get_noa()+file_item.get_nod() {
                 let fragment_id = file_id * 100 + j;
                 //TODO: delete local fragment
                 query.deleteFragment(fragment_id);
