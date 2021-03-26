@@ -163,6 +163,7 @@ impl GetFileList {
             true,//is_folder
             String::new(),//filetype
             0,//file_size
+            1,
             whose.clone()
         ));
     }
