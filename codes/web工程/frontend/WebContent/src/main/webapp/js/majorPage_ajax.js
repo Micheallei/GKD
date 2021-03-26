@@ -103,6 +103,7 @@ function decodeFile(fileName, fileType, numOfDivision, numOfAppend, content, dig
 	var queue=[];//分块任务队列
 	var blocksize=1024*1024;//每个文件块<1MB
 	var decoded=[];
+	var total = Math.round((numOfDivision+numOfAppend)/file_blocks);
 	/*
 	for (var i = 0; i < content.length; i++) {
 		if (digest[i] != objectHash.MD5(content[i])) {
@@ -122,34 +123,52 @@ function decodeFile(fileName, fileType, numOfDivision, numOfAppend, content, dig
 	for(i=0;i<file_blocks;i++){
 		queue.push(new Promise(function (resolve, reject) {
 			//console.log(i);
-			var result = callDecoder(contentView.slice(i*blocksize,(i+1)*blocksize), Math.round(numOfDivision/file_blocks), Math.round(numOfAppend/file_blocks));
-			if(i < file_blocks-1){
+			var shards=new Array(total);
+			for(j=0;j<total;j++) {
+				shards[j] = contentView[i * total + j];
+			}
+			var result;
+			if(i < file_blocks-1){//为中间块，大小固定，2MB
+				//console.log("shards:"+shards);
+				result=callDecoder(shards, Math.round(numOfDivision/file_blocks),Math.round(numOfAppend/file_blocks));
+				//console.log("result: "+result);
 				if (result.length > blocksize){
-					result = result.subarray(0, fileSize);
+					result = result.subarray(0, blocksize);
 				}
 			}
-			else if(result.length > contentView.length-i*blocksize){
-				result = result.subarray(0, contentView.length-i*blocksize);
+			else {//<=1MB的文件块的nod和noa部分
+				//console.log("shards: "+shards);
+				//console.log("shards[0]:"+shards[0]);
+				result=callDecoder(shards, Math.round(numOfDivision/file_blocks), Math.round(numOfAppend/file_blocks));
+				//console.log("result:"+result);
+				result = result.subarray(0, fileSize-i*blocksize);
 			}
+			//console.log("result[0]"+result[0]);//49
+			//console.log(result.length);//12
 			resolve(result);
 		}));
 	}
 	Promise.all(queue).then(function (results) {
-		//console.log(results); // 获得一个Array: ['P1', 'P2']
-		for(i=0;i<results.length;i++){
-			decoded.push.apply(decoded,results[i]);
+		console.log("results.length  "+results.length); // 获得一个Array: ['P1', 'P2']
+		console.log("results0.length  "+results[0].length);
+		//console.log("results  "+results);
+		decoded = Array.from(results[0]);
+		for(i=1;i<results.length;i++){
+			//console.log("results i length  "+results[i].length);
+			//decoded.push.apply(decoded,results[i]);
+			decoded = decoded.concat(Array.from(results[i]));
 		}
+		//console.log("decoded length: "+decoded.length);
+		//const t6 = Date.now();//Decode timing end
+		console.log("decoded length: "+decoded.length);
+		// after decoded, download the file and show info(time, errors)
+		createAndDownloadFile(fileName, fileType, new Uint8Array(decoded));
+
+		// if (document.getElementById("decode") != null)
+		// 	document.getElementById("decode").innerHTML += "Decode with " + errors + " errors succeeded in " + (t6 - t5) + "mS</br>";
+		// console.log("Erasure decode took " + (t6 - t5) + " mS");
+		return Promise.resolve(true);
 	});
-	
-	//const t6 = Date.now();//Decode timing end
-
-	// after decoded, download the file and show info(time, errors)
-	createAndDownloadFile(fileName, fileType, decoded);
-
-	if (document.getElementById("decode") != null)
-		document.getElementById("decode").innerHTML += "Decode with " + errors + " errors succeeded in " + (t6 - t5) + "mS</br>";
-	console.log("Erasure decode took " + (t6 - t5) + " mS");
-	return Promise.resolve(true);
 }
 function WebSocketUpload(ip,port,fragmentName,fragmentContent,digest)
 {
@@ -194,8 +213,8 @@ function encodeFile(selectedFile) {
      * */
 	// sendFragments((str)fileName,(str)fileType,(int)numOfDivision,(int)numOfAppend,(byte[][])content(content),(string[])digest,(int)fileSize);
 
-	let numOfDivision = 5;
-	let numOfAppend = 2;
+	let numOfDivision = 4;
+	let numOfAppend = 4;
 	var fileType = [];
 	var fileName = [];
 	var fileSize;
@@ -250,18 +269,21 @@ function encodeFile(selectedFile) {
 			alert("waiting for worker");
 			console.log(e.data);*/
 			/*fileEncoder*/
+			console.log('uploader raw: '+raw);
+			console.log('fileblocks: '+file_blocks);
 			for(i=0;i<file_blocks;i++){
 				queue.push(new Promise(function (resolve, reject) {
-					//console.log(i);
+					console.log("raw slice: "+raw.slice(i*blocksize,(i+1)*blocksize));
 					var result=callEncoder(raw.slice(i*blocksize,(i+1)*blocksize),numOfDivision,numOfAppend);
 					resolve(result);
 				}));
 			}
 			Promise.all(queue).then(function (results) {
-				//console.log(results); // 获得一个Array: ['P1', 'P2']
+				console.log(results); // 获得一个Array: ['P1', 'P2']
 				for(i=0;i<results.length;i++){
 					content.push.apply(content,results[i]);
 				}
+				console.log('content: '+content);
 				for (var i = 0; i < content.length; i++) {
 					digest[i] = objectHash.MD5(content[i]);
 				}
