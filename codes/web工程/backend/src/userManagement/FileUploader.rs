@@ -188,6 +188,8 @@ impl FileUploader{
                 distanceId.push(i.clone());
                 
             }
+            onlineDevice[i].leftrs = onlineDevice[i].get_leftrs() - fragmentSize;
+            let res = query.alterDevice(onlineDevice[i].clone());
             if i == 0 {
                 break;
             }
